@@ -18,10 +18,10 @@
   /* Brand accents */
   --da-yellow: #FCD900;       /* CTA zone + footer surface */
   --da-yellow-chip: rgba(254, 236, 128, 0.5); /* "Car Insurance" chip */
-  --da-green: #75BB49;        /* Enabled primary CTA + selected state */
-  --da-green-hover: #69A841;
-  --da-green-active: #5E9A3A;
-  --da-green-tint: #EEF6E9;   /* Selected card background tint */
+  --da-green: #75BB49;        /* Main Button — default (enabled) */
+  --da-green-pressed: #8FDB5F;/* Main Button — active / pressed (lighter) */
+  --da-green-focus: #5FA236;  /* Main Button — focus (darker) */
+  --da-green-ring: #6AFF00;   /* Main Button — hover outline ring */
   --da-red: #DC2B1E;          /* Logo, links, error */
   --da-blue: #457CBF;         /* Progress-bar active + selected card state */
   --da-blue-tint: #EAF1FA;    /* Selected card background tint */
@@ -36,9 +36,9 @@
   --da-bar-off: #CCCCCC;      /* Inactive progress bar */
   --da-grey-100: #F5F6F7;     /* Subtle hover / chip fills */
 
-  /* Disabled / blocked button */
-  --da-disabled-bg: #E8E8E8;
-  --da-disabled-ink: #979797;
+  /* Disabled / blocked button (Main Button — Disabled state) */
+  --da-disabled-bg: #DCDCDD;
+  --da-disabled-ink: #949396;
 
   /* Geometry */
   --da-max-mobile: 420px;
@@ -120,11 +120,21 @@ button {
   min-height: 47px;
   box-shadow: var(--da-btn-shadow);
 }
+/* Hover — same green, bright outline ring (Figma Main Button / Hover). */
 .p-button.da-primary:not(:disabled):hover {
-  background: var(--da-green-hover);
+  background: var(--da-green);
+  outline: 1px solid var(--da-green-ring);
+  outline-offset: -1px;
 }
+/* Focus — darker green, no blue PrimeVue ring (re-assert the drop shadow). */
+.p-button.da-primary:not(:disabled):focus-visible {
+  background: var(--da-green-focus);
+  outline: none;
+  box-shadow: var(--da-btn-shadow);
+}
+/* Active / pressed — lighter green (Figma Main Button / Active). */
 .p-button.da-primary:not(:disabled):active {
-  background: var(--da-green-active);
+  background: var(--da-green-pressed);
 }
 /* "Blocked" = looks disabled (grey) but stays clickable so a click can reveal
    the step's field errors. Driven by the .is-blocked class, not :disabled. */

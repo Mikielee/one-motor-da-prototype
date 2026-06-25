@@ -37,9 +37,11 @@ links, primary CTA), and a **blue** progress/selected accent on slate ink —
 Font: **Montserrat** (Google Fonts). (BDI uses Museo/Nunito Sans.)
 
 The sticky CTA bar (Figma QuoteFooter / Main Button): yellow zone, rounded-top
-16px. **Enabled** Next = green `#75BB49` + white text. **Blocked/disabled** =
-`#E8E8E8` + `#979797`. **Back** button = yellow fill + `#79747E` outline + soft
-shadow. All buttons 47px tall, 8px radius, shadow `0 4px 4px rgba(0,0,0,.25)`.
+16px. **Main Button states** (white text throughout): default `#75BB49` ·
+hover `#75BB49` + `#6AFF00` ring · focus `#5FA236` · active/pressed `#8FDB5F` ·
+disabled `#DCDCDD` bg / `#949396` text. **Back** button = yellow fill +
+`#79747E` outline + soft shadow. All buttons 47px tall, 8px radius, shadow
+`0 4px 4px rgba(0,0,0,.25)`.
 
 > **Selected/active state = blue `#457CBF`** (border + radio + light blue tint),
 > confirmed by Mikie. Green `#75BB49` is the enabled CTA only.
