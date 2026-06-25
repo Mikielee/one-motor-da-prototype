@@ -105,9 +105,6 @@ const modelError = computed(() => showErrors.value && quote.carYear && quote.car
           placeholder="Year"
           :invalid="yearError"
         />
-        <p v-if="isThirdParty" class="ymm-hint">
-          Third-party covers are available for cars up to 15 years old.
-        </p>
       </div>
 
       <div class="field" :data-error="makeError ? 'true' : null">
