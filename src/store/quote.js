@@ -7,8 +7,8 @@ const state = reactive({
   carYear: null,
   carMake: null,
   carModel: null,
-  carUsage: null,
-  carFinancing: null,        // DA-only: car under hire purchase / loan (asked upfront)
+  carUsage: null,            // Step 4: { usage, commute, offPeak }
+  carFinancing: null,        // not collected on Step 4 in the DA Figma frame; reserved
   annualDistance: null,
   driveLessEligible: false,  // DA-only: derived — annual distance < 8,000km
   mainDriver: {

@@ -1,128 +1,123 @@
 <script setup>
-import { computed, reactive } from 'vue'
+import { reactive, computed, watch } from 'vue'
 import StickyNext from '../components/StickyNext.vue'
+import RadioOptionCard from '../components/RadioOptionCard.vue'
+import FieldError from '../components/FieldError.vue'
 import { useQuote } from '../store/quote'
+import { useValidation } from '../composables/useValidation'
 
 const { quote, mutable } = useQuote()
+const { showErrors, reveal } = useValidation()
 
 const usageOptions = [
   { value: 'private-only', title: 'Private only', desc: 'Social, domestic and pleasure purposes only.' },
   { value: 'private-business', title: 'Private and business', desc: 'Personal use plus business activities.' },
 ]
-
 const commuteOptions = [
   { value: 'regular', title: 'Regular commuting', desc: 'The car is driven to work or study at least once a week.' },
   { value: 'none', title: 'No commuting', desc: 'You work from home and/or the car is rarely or never driven to work or study.' },
 ]
 
-const local = reactive({
-  usage: quote.carUsage?.usage || null,
-  commute: quote.carUsage?.commute || null,
-  offPeak: quote.carUsage?.offPeak ?? null,
-  // DA-only: DirectAsia collects financing upfront so the first price is accurate.
-  financing: quote.carFinancing ?? null,
+const stored = quote.carUsage || {}
+const form = reactive({
+  usage: stored.usage ?? null,     // Q1
+  commute: stored.commute ?? null, // Q2
+  offPeak: stored.offPeak ?? null, // Q3
 })
+watch(form, () => { mutable.carUsage = { ...form } }, { deep: true })
 
-function pickUsage(v) { local.usage = v; sync() }
-function pickCommute(v) { local.commute = v; sync() }
-function pickOffPeak(v) { local.offPeak = v; sync() }
-function pickFinancing(v) { local.financing = v; sync() }
+// Progressive disclosure (OMP-90 AC):
+//  - Disclaimer shows once Q1 is answered.
+//  - Q2 (commute) only when Q1 = Private only.
+//  - Q3 (off-peak) when Q1 = Private and business, OR when Q2 is answered.
+const showQ2 = computed(() => form.usage === 'private-only')
+const showQ3 = computed(() =>
+  form.usage === 'private-business' ||
+  (form.usage === 'private-only' && form.commute !== null)
+)
 
-function sync() {
-  mutable.carUsage = { usage: local.usage, commute: local.commute, offPeak: local.offPeak }
-  mutable.carFinancing = local.financing
+function pickUsage(v) {
+  // Switching Q1 clears the commute answer so Q2 is re-asked fresh.
+  if (form.usage !== v) form.commute = null
+  form.usage = v
 }
 
 const canContinue = computed(() =>
-  Boolean(local.usage && local.commute && local.offPeak !== null && local.financing !== null)
+  form.usage !== null &&
+  (form.usage === 'private-business' || form.commute !== null) &&
+  showQ3.value && form.offPeak !== null
 )
+
+// Per-question errors — only the topmost unanswered VISIBLE question fires.
+const q1Error = computed(() => showErrors.value && !form.usage)
+const q2Error = computed(() => showErrors.value && showQ2.value && !form.commute)
+const q3Error = computed(() => showErrors.value && showQ3.value && form.offPeak === null)
 </script>
 
 <template>
   <section class="step">
-    <h1 class="da-section-title">How do you use your car?</h1>
+    <h1 class="da-section-title">Tell us about your car</h1>
 
-    <div class="card-stack" role="radiogroup" aria-label="Car usage">
-      <button
-        v-for="o in usageOptions"
-        :key="o.value"
-        type="button"
-        role="radio"
-        :aria-checked="local.usage === o.value"
-        class="choice-card"
-        :class="{ 'is-selected': local.usage === o.value }"
-        @click="pickUsage(o.value)"
-      >
-        <span class="choice-radio" :class="{ 'is-on': local.usage === o.value }">
-          <span v-if="local.usage === o.value" class="choice-dot" />
-        </span>
-        <span class="choice-text">
-          <span class="choice-title">{{ o.title }}</span>
-          <span class="choice-desc">{{ o.desc }}</span>
-        </span>
-      </button>
+    <div class="usage-form">
+      <!-- Q1 -->
+      <div class="q-block">
+        <p class="q-label">How do you use your car?</p>
+        <div class="opt-stack q1-stack" role="radiogroup" aria-label="Car usage"
+             :data-error="q1Error ? 'true' : null">
+          <RadioOptionCard
+            v-for="o in usageOptions"
+            :key="o.value"
+            :title="o.title"
+            :description="o.desc"
+            :selected="form.usage === o.value"
+            :error="q1Error"
+            @select="pickUsage(o.value)"
+          />
+          <div v-if="form.usage" class="disclaimer">
+            <i class="pi pi-info-circle" aria-hidden="true"></i>
+            <p><strong>Disclaimer</strong>: we do not cover ride hailing.</p>
+          </div>
+        </div>
+        <FieldError :show="q1Error" message="Select your car usage." />
+      </div>
+
+      <!-- Q2 + Q3 -->
+      <div v-if="showQ2 || showQ3" class="q2q3">
+        <div v-if="showQ2" class="q-block">
+          <p class="q-label">Do you use this car for any part of your commute to work or school?</p>
+          <div class="opt-stack" role="radiogroup" aria-label="Commute"
+               :data-error="q2Error ? 'true' : null">
+            <RadioOptionCard
+              v-for="o in commuteOptions"
+              :key="o.value"
+              :title="o.title"
+              :description="o.desc"
+              :selected="form.commute === o.value"
+              :error="q2Error"
+              @select="form.commute = o.value"
+            />
+          </div>
+          <FieldError :show="q2Error" message="Tell us if you use your car for commuting." />
+        </div>
+
+        <div v-if="showQ3" class="q-block">
+          <p class="q-label">Is this an off-peak car?</p>
+          <div class="segment" :class="{ 'is-error': q3Error }"
+               role="radiogroup" aria-label="Off-peak car"
+               :data-error="q3Error ? 'true' : null">
+            <button type="button" class="seg-btn" :class="{ 'is-on': form.offPeak === true }"
+                    role="radio" :aria-checked="form.offPeak === true"
+                    @click="form.offPeak = true">Yes</button>
+            <button type="button" class="seg-btn" :class="{ 'is-on': form.offPeak === false }"
+                    role="radio" :aria-checked="form.offPeak === false"
+                    @click="form.offPeak = false">No</button>
+          </div>
+          <FieldError :show="q3Error" message="Tell us if this is an off-peak car." />
+        </div>
+      </div>
     </div>
 
-    <p class="disclaimer">
-      <strong>Disclaimer</strong>: we do not cover ride hailing.
-    </p>
-
-    <p class="field-label">Do you use this car for any part of your commute to work or school?</p>
-    <div class="card-stack" role="radiogroup" aria-label="Commute">
-      <button
-        v-for="o in commuteOptions"
-        :key="o.value"
-        type="button"
-        role="radio"
-        :aria-checked="local.commute === o.value"
-        class="choice-card"
-        :class="{ 'is-selected': local.commute === o.value }"
-        @click="pickCommute(o.value)"
-      >
-        <span class="choice-radio" :class="{ 'is-on': local.commute === o.value }">
-          <span v-if="local.commute === o.value" class="choice-dot" />
-        </span>
-        <span class="choice-text">
-          <span class="choice-title">{{ o.title }}</span>
-          <span class="choice-desc">{{ o.desc }}</span>
-        </span>
-      </button>
-    </div>
-
-    <p class="field-label">Is this an off-peak car?</p>
-    <div class="yes-no">
-      <button
-        type="button"
-        class="yn-button"
-        :class="{ 'is-selected': local.offPeak === true }"
-        @click="pickOffPeak(true)"
-      >Yes</button>
-      <button
-        type="button"
-        class="yn-button"
-        :class="{ 'is-selected': local.offPeak === false }"
-        @click="pickOffPeak(false)"
-      >No</button>
-    </div>
-
-    <p class="field-label">Is your car under a hire purchase or loan?</p>
-    <p class="sub-help">This helps us tailor the most accurate price for you upfront.</p>
-    <div class="yes-no">
-      <button
-        type="button"
-        class="yn-button"
-        :class="{ 'is-selected': local.financing === true }"
-        @click="pickFinancing(true)"
-      >Yes</button>
-      <button
-        type="button"
-        class="yn-button"
-        :class="{ 'is-selected': local.financing === false }"
-        @click="pickFinancing(false)"
-      >No</button>
-    </div>
-
-    <StickyNext :disabled="!canContinue" />
+    <StickyNext :disabled="!canContinue" @blocked="reveal" />
   </section>
 </template>
 
@@ -134,87 +129,54 @@ const canContinue = computed(() =>
   gap: 16px;
 }
 
-.card-stack { display: flex; flex-direction: column; gap: 8px; }
+.usage-form { display: flex; flex-direction: column; gap: 24px; }
+.q2q3 { display: flex; flex-direction: column; gap: 16px; }
+.q-block { display: flex; flex-direction: column; gap: 8px; }
 
-.choice-card {
+.q-label {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--da-ink);
+  line-height: 20px;
+}
+
+.opt-stack { display: flex; flex-direction: column; gap: 8px; }
+.q1-stack { gap: 16px; }
+
+/* Disclaimer card — neutral blue-grey surface, info icon + text (node 5584:7813). */
+.disclaimer {
   display: flex;
   align-items: flex-start;
-  gap: 12px;
-  width: 100%;
-  background: #fff;
-  border: 1px solid var(--da-grey-200);
-  border-radius: var(--da-radius-card);
-  padding: 16px;
-  text-align: left;
-  cursor: pointer;
-}
-.choice-card:hover { border-color: var(--da-grey-500); }
-.choice-card.is-selected {
-  border-color: var(--da-green);
-  box-shadow: 0 0 0 1px var(--da-green) inset;
-}
-
-.choice-radio {
-  flex-shrink: 0;
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  border: 1.5px solid var(--da-grey-500);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  margin-top: 2px;
-}
-.choice-radio.is-on { border-color: var(--da-green); }
-.choice-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--da-green); }
-
-.choice-text { display: flex; flex-direction: column; gap: 4px; }
-.choice-title { font-size: 14px; font-weight: 900; color: var(--da-carbon); }
-.choice-desc { font-size: 12px; font-weight: 500; color: var(--da-carbon); line-height: 1.4; }
-
-.disclaimer {
-  margin: 0;
-  background: var(--da-grey-100);
+  gap: 8px;
+  background: #E6E9ED;
   border: 1px solid #CCCCCC;
   border-radius: var(--da-radius-card);
-  padding: 8px 16px;
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--da-carbon);
+  padding: 8px;
 }
-.disclaimer strong { font-weight: 900; }
+.disclaimer .pi { color: var(--da-ink); font-size: 18px; margin-top: 1px; flex-shrink: 0; }
+.disclaimer p { margin: 0; font-size: 14px; font-weight: 400; color: var(--da-ink); line-height: 20px; }
+.disclaimer strong { font-weight: 700; }
 
-.field-label {
-  margin: 8px 0 0 0;
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--da-carbon);
-  line-height: 1.4;
-}
-
-.sub-help {
-  margin: -8px 0 0 0;
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--da-grey-600);
-  line-height: 1.4;
-}
-
-.yes-no { display: flex; gap: 8px; }
-.yn-button {
+/* Off-peak Yes/No segmented pair (node 5584:7850). Selected = blue fill + white
+   text; both keep the M3 outline. */
+.segment { display: flex; gap: 8px; }
+.seg-btn {
   flex: 1;
+  height: 48px;
   background: #fff;
-  border: 1px solid var(--da-grey-300);
+  border: 1px solid var(--da-outline);
   border-radius: var(--da-radius-card);
   padding: 12px 16px;
   font-size: 14px;
-  font-weight: 700;
-  color: var(--da-carbon);
+  font-weight: 500;
+  color: var(--da-ink);
   cursor: pointer;
 }
-.yn-button.is-selected {
-  border-color: var(--da-green);
-  box-shadow: 0 0 0 1px var(--da-green) inset;
-  color: var(--da-green);
+.seg-btn.is-on {
+  background: var(--da-blue);
+  border-color: var(--da-outline);
+  color: #fff;
 }
+.segment.is-error .seg-btn { border-color: var(--da-error); }
 </style>
