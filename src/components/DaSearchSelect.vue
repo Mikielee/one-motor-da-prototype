@@ -1,12 +1,16 @@
 <script setup>
 /**
- * DA search-select (Year / Car brand / Car model) — matches the OMP-89 Figma
- * component. The closed field is a Material outlined "search bar" with a
- * chevron-down. Tapping it opens a panel (white, 16px radius, #2196F3 border,
- * soft shadow) holding an optional in-panel search field (magnifier + "Search"
- * + X clear) and a grouped, scrollable list that filters as the user types.
+ * DA search-select (Year / Car brand / Car model / form dropdowns).
+ *
+ * Closed field: Material outlined "search bar" with a chevron-down.
+ * Open: a BOTTOM SHEET slides up from the foot of the screen — a dimmed
+ * backdrop covers the sticky CTA, and the option list scrolls inside the sheet.
+ * This replaces the old anchored panel, which overflowed the viewport when the
+ * field sat near the bottom of a mobile page. Keeps the DA look: white surface,
+ * #2196F3 active accent, grab handle, in-sheet search (magnifier + X clear) and
+ * a grouped list.
  */
-import { ref, computed, nextTick, onMounted, onBeforeUnmount } from 'vue'
+import { ref, computed, nextTick, watch, onBeforeUnmount } from 'vue'
 
 const props = defineProps({
   modelValue: { default: null },
@@ -24,7 +28,6 @@ const emit = defineEmits(['update:modelValue'])
 
 const open = ref(false)
 const query = ref('')
-const root = ref(null)
 const searchInput = ref(null)
 
 const allItems = computed(() =>
@@ -47,36 +50,33 @@ const filteredGroups = computed(() => {
   return items.length ? [{ label: null, items }] : []
 })
 
-async function toggle() {
+async function openSheet() {
   if (props.disabled) return
-  open.value = !open.value
-  if (open.value) {
-    query.value = ''
-    if (props.searchable) {
-      await nextTick()
-      searchInput.value?.focus()
-    }
+  query.value = ''
+  open.value = true
+  if (props.searchable) {
+    await nextTick()
+    searchInput.value?.focus()
   }
 }
+function close() { open.value = false }
 function pick(o) {
   emit('update:modelValue', o.value)
   open.value = false
 }
-function onDocClick(e) {
-  if (root.value && !root.value.contains(e.target)) open.value = false
-}
-onMounted(() => document.addEventListener('mousedown', onDocClick))
-onBeforeUnmount(() => document.removeEventListener('mousedown', onDocClick))
+
+// Lock background scroll while the sheet is up.
+watch(open, (v) => { document.body.style.overflow = v ? 'hidden' : '' })
+onBeforeUnmount(() => { document.body.style.overflow = '' })
 </script>
 
 <template>
   <div
-    ref="root"
     class="da-ss"
     :class="{ 'is-open': open, 'is-disabled': disabled, 'is-invalid': invalid }"
     :style="{ '--ss-outline': fieldOutline }"
   >
-    <button type="button" class="da-ss-field" :disabled="disabled" @click="toggle">
+    <button type="button" class="da-ss-field" :disabled="disabled" @click="openSheet">
       <span class="da-ss-value" :class="{ 'is-placeholder': !selectedLabel }">
         {{ selectedLabel || placeholder }}
       </span>
@@ -87,41 +87,50 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', onDocClick))
       </span>
     </button>
 
-    <div v-if="open" class="da-ss-panel">
-      <div v-if="searchable" class="da-ss-search">
-        <span class="da-ss-search-ic" aria-hidden="true">
-          <img src="/search-icon.png" alt="" width="24" height="24" />
-        </span>
-        <input
-          ref="searchInput"
-          v-model="query"
-          type="text"
-          class="da-ss-search-input"
-          placeholder="Search"
-        />
-        <button v-if="query" type="button" class="da-ss-clear" aria-label="Clear search" @click="query = ''">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-            <path d="M6.4 19L5 17.6L10.6 12L5 6.4L6.4 5L12 10.6L17.6 5L19 6.4L13.4 12L19 17.6L17.6 19L12 13.4L6.4 19Z" fill="#49454F" />
-          </svg>
-        </button>
-      </div>
+    <Teleport to="body">
+      <Transition name="ss">
+        <div v-if="open" class="da-ss-overlay">
+          <div class="da-ss-backdrop" @click="close" />
+          <div class="da-ss-sheet" role="dialog" aria-modal="true">
+            <span class="da-ss-grip" aria-hidden="true" />
 
-      <ul class="da-ss-list">
-        <template v-for="(g, gi) in filteredGroups" :key="gi">
-          <li v-if="g.label" class="da-ss-group">{{ g.label }}</li>
-          <li
-            v-for="o in g.items"
-            :key="o.value"
-            class="da-ss-item"
-            :class="{ 'is-sel': o.value === modelValue }"
-            @click="pick(o)"
-          >
-            {{ o.label }}
-          </li>
-        </template>
-        <li v-if="!filteredGroups.length" class="da-ss-empty">No matches</li>
-      </ul>
-    </div>
+            <div v-if="searchable" class="da-ss-search">
+              <span class="da-ss-search-ic" aria-hidden="true">
+                <img src="/search-icon.png" alt="" width="24" height="24" />
+              </span>
+              <input
+                ref="searchInput"
+                v-model="query"
+                type="text"
+                class="da-ss-search-input"
+                placeholder="Search"
+              />
+              <button v-if="query" type="button" class="da-ss-clear" aria-label="Clear search" @click="query = ''">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                  <path d="M6.4 19L5 17.6L10.6 12L5 6.4L6.4 5L12 10.6L17.6 5L19 6.4L13.4 12L19 17.6L17.6 19L12 13.4L6.4 19Z" fill="#49454F" />
+                </svg>
+              </button>
+            </div>
+
+            <ul class="da-ss-list">
+              <template v-for="(g, gi) in filteredGroups" :key="gi">
+                <li v-if="g.label" class="da-ss-group">{{ g.label }}</li>
+                <li
+                  v-for="o in g.items"
+                  :key="o.value"
+                  class="da-ss-item"
+                  :class="{ 'is-sel': o.value === modelValue }"
+                  @click="pick(o)"
+                >
+                  {{ o.label }}
+                </li>
+              </template>
+              <li v-if="!filteredGroups.length" class="da-ss-empty">No matches</li>
+            </ul>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
   </div>
 </template>
 
@@ -161,7 +170,7 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', onDocClick))
   align-items: center;
   justify-content: center;
   color: #49454F;
-  transition: transform 120ms ease;
+  transition: transform 160ms ease;
 }
 
 .da-ss.is-open .da-ss-field { border: 2px solid #2196F3; padding-left: 19px; }
@@ -176,25 +185,39 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', onDocClick))
 .da-ss.is-disabled .da-ss-value.is-placeholder { color: #49454F; }
 .da-ss.is-disabled .da-ss-chev { color: #49454F; }
 
-/* Open panel — blue border, rounded, shadow (Figma "Rectangle 8"). */
-.da-ss-panel {
+/* ---- Bottom sheet ---- */
+.da-ss-overlay { position: fixed; inset: 0; z-index: 1000; }
+.da-ss-backdrop {
   position: absolute;
-  top: calc(100% + 6px);
-  left: 0;
-  right: 0;
-  z-index: 40;
+  inset: 0;
+  background: rgba(29, 27, 32, 0.45);
+}
+.da-ss-sheet {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  transform: translateX(-50%);
+  width: min(420px, 100vw);
+  max-height: 78vh;
+  display: flex;
+  flex-direction: column;
   background: #fff;
-  border: 1px solid #2196F3;
-  border-radius: 16px;
-  box-shadow: 0 0 4px rgba(0, 0, 0, 0.25);
-  padding: 13px;
-  max-height: 320px;
-  overflow-y: auto;
+  border-radius: 16px 16px 0 0;
+  box-shadow: 0 -10px 32px rgba(0, 0, 0, 0.22);
+  padding: 8px 13px max(16px, env(safe-area-inset-bottom));
+}
+.da-ss-grip {
+  flex: 0 0 auto;
+  width: 36px;
+  height: 4px;
+  border-radius: 2px;
+  background: #D1CDD4;
+  margin: 4px auto 12px;
 }
 
-/* In-panel search field. */
+/* In-sheet search field. */
 .da-ss-search {
-  position: relative;
+  flex: 0 0 auto;
   display: flex;
   align-items: center;
   height: 56px;
@@ -207,6 +230,7 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', onDocClick))
 .da-ss-search-ic { flex: 0 0 24px; display: inline-flex; align-items: center; }
 .da-ss-search-input {
   flex: 1 1 auto;
+  min-width: 0;
   border: 0;
   outline: 0;
   background: transparent;
@@ -229,7 +253,15 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', onDocClick))
   color: #49454F;
 }
 
-.da-ss-list { list-style: none; margin: 0; padding: 0; }
+.da-ss-list {
+  flex: 1 1 auto;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
 .da-ss-group {
   font-family: var(--da-font);
   font-size: 16px;
@@ -251,7 +283,8 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', onDocClick))
   cursor: pointer;
   border-radius: 4px;
 }
-.da-ss-item:hover { background: #F5F6F7; }
+.da-ss-item:active { background: #F5F6F7; }
+@media (hover: hover) { .da-ss-item:hover { background: #F5F6F7; } }
 .da-ss-item.is-sel { color: var(--da-blue); font-weight: 700; }
 .da-ss-empty {
   padding: 16px;
@@ -259,4 +292,14 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', onDocClick))
   font-size: 14px;
   color: var(--da-step-off);
 }
+
+/* Sheet motion — backdrop fades, sheet rises (ease-out). */
+.ss-enter-active .da-ss-backdrop,
+.ss-leave-active .da-ss-backdrop { transition: opacity 200ms ease-out; }
+.ss-enter-from .da-ss-backdrop,
+.ss-leave-to .da-ss-backdrop { opacity: 0; }
+.ss-enter-active .da-ss-sheet,
+.ss-leave-active .da-ss-sheet { transition: transform 280ms cubic-bezier(0.22, 1, 0.36, 1); }
+.ss-enter-from .da-ss-sheet,
+.ss-leave-to .da-ss-sheet { transform: translate(-50%, 100%); }
 </style>
