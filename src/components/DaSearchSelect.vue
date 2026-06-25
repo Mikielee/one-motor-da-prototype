@@ -17,6 +17,8 @@ const props = defineProps({
   placeholder: { type: String, default: 'Select' },
   disabled: { type: Boolean, default: false },
   invalid: { type: Boolean, default: false },
+  // Resting field outline colour (Material steps use #79747E; some forms #CCCCCC).
+  fieldOutline: { type: String, default: '#79747E' },
 })
 const emit = defineEmits(['update:modelValue'])
 
@@ -72,6 +74,7 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', onDocClick))
     ref="root"
     class="da-ss"
     :class="{ 'is-open': open, 'is-disabled': disabled, 'is-invalid': invalid }"
+    :style="{ '--ss-outline': fieldOutline }"
   >
     <button type="button" class="da-ss-field" :disabled="disabled" @click="toggle">
       <span class="da-ss-value" :class="{ 'is-placeholder': !selectedLabel }">
@@ -133,7 +136,7 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', onDocClick))
   align-items: center;
   gap: 4px;
   background: #fff;
-  border: 1px solid var(--da-outline);
+  border: 1px solid var(--ss-outline, var(--da-outline));
   border-radius: 4px;
   padding: 0 8px 0 20px;
   cursor: pointer;

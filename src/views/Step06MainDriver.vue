@@ -1,18 +1,12 @@
 <script setup>
-import { computed, reactive } from 'vue'
-import DatePicker from 'primevue/datepicker'
-import Select from 'primevue/select'
+import { computed } from 'vue'
+import DaSearchSelect from '../components/DaSearchSelect.vue'
+import DaDateField from '../components/DaDateField.vue'
 import StickyNext from '../components/StickyNext.vue'
 import { useQuote } from '../store/quote'
 
 const { quote, mutable } = useQuote()
-
-const local = reactive({
-  isPolicyholder: quote.mainDriver?.isPolicyholder ?? null,
-  dob: quote.mainDriver?.dob || null,
-  gender: quote.mainDriver?.gender || '',
-  maritalStatus: quote.mainDriver?.maritalStatus || '',
-})
+const md = computed(() => quote.mainDriver)
 
 const maritalOptions = [
   { label: 'Single', value: 'single' },
@@ -21,25 +15,28 @@ const maritalOptions = [
   { label: 'Widowed', value: 'widowed' },
 ]
 
-function pickPolicyholder(v) { local.isPolicyholder = v; sync() }
-function pickGender(v) { local.gender = v; sync() }
-function onDobChange(v) { local.dob = v; sync() }
-function onMaritalChange(v) { local.maritalStatus = v; sync() }
+const maritalStatus = computed({
+  get: () => quote.mainDriver.maritalStatus || null,
+  set: (v) => { mutable.mainDriver.maritalStatus = v },
+})
+const dob = computed({
+  get: () => quote.mainDriver.dob,
+  set: (v) => { mutable.mainDriver.dob = v },
+})
 
-function sync() {
-  mutable.mainDriver = {
-    ...quote.mainDriver,
-    isPolicyholder: local.isPolicyholder,
-    dob: local.dob,
-    gender: local.gender,
-    maritalStatus: local.maritalStatus,
-  }
-}
+// Driver must be at least 18; cap the calendar accordingly.
+const now = new Date()
+const dobMax = new Date(now.getFullYear() - 18, now.getMonth(), now.getDate())
+const dobMin = new Date(now.getFullYear() - 100, 0, 1)
 
-const maxDob = new Date()
+function setPolicyholder(v) { mutable.mainDriver.isPolicyholder = v }
+function setGender(v) { mutable.mainDriver.gender = v }
 
 const canContinue = computed(() =>
-  local.isPolicyholder !== null && local.dob && local.gender && local.maritalStatus
+  md.value.isPolicyholder !== null &&
+  Boolean(md.value.gender) &&
+  Boolean(md.value.maritalStatus) &&
+  Boolean(md.value.dob)
 )
 </script>
 
@@ -47,68 +44,58 @@ const canContinue = computed(() =>
   <section class="step">
     <h1 class="da-section-title">Main driver details</h1>
 
-    <div class="field">
-      <p class="field-label">Is the main driver also the policyholder?</p>
-      <div class="yes-no">
-        <button
-          type="button"
-          class="yn-button"
-          :class="{ 'is-selected': local.isPolicyholder === true }"
-          @click="pickPolicyholder(true)"
-        >Yes</button>
-        <button
-          type="button"
-          class="yn-button"
-          :class="{ 'is-selected': local.isPolicyholder === false }"
-          @click="pickPolicyholder(false)"
-        >No</button>
+    <div class="md-form">
+      <!-- Is the main driver also the policyholder? -->
+      <div class="field">
+        <p class="field-label">Is the main driver also the policyholder?</p>
+        <div class="seg" role="radiogroup" aria-label="Main driver is policyholder">
+          <button type="button" class="seg-btn" role="radio"
+            :aria-checked="md.isPolicyholder === true"
+            :class="{ 'is-on': md.isPolicyholder === true }"
+            @click="setPolicyholder(true)">Yes</button>
+          <button type="button" class="seg-btn" role="radio"
+            :aria-checked="md.isPolicyholder === false"
+            :class="{ 'is-on': md.isPolicyholder === false }"
+            @click="setPolicyholder(false)">No</button>
+        </div>
       </div>
-    </div>
 
-    <div class="field">
-      <label class="field-label" for="dob">Date of birth</label>
-      <DatePicker
-        id="dob"
-        :model-value="local.dob"
-        @update:model-value="onDobChange"
-        date-format="dd/mm/yy"
-        placeholder="DD/MM/YYYY"
-        show-icon
-        :max-date="maxDob"
-        class="da-input"
-        fluid
-      />
-    </div>
-
-    <div class="field">
-      <p class="field-label">Gender</p>
-      <div class="yes-no">
-        <button
-          type="button"
-          class="yn-button"
-          :class="{ 'is-selected': local.gender === 'male' }"
-          @click="pickGender('male')"
-        >Male</button>
-        <button
-          type="button"
-          class="yn-button"
-          :class="{ 'is-selected': local.gender === 'female' }"
-          @click="pickGender('female')"
-        >Female</button>
+      <!-- Gender -->
+      <div class="field">
+        <p class="field-label">Gender</p>
+        <div class="seg" role="radiogroup" aria-label="Gender">
+          <button type="button" class="seg-btn" role="radio"
+            :aria-checked="md.gender === 'male'"
+            :class="{ 'is-on': md.gender === 'male' }"
+            @click="setGender('male')">Male</button>
+          <button type="button" class="seg-btn" role="radio"
+            :aria-checked="md.gender === 'female'"
+            :class="{ 'is-on': md.gender === 'female' }"
+            @click="setGender('female')">Female</button>
+        </div>
       </div>
-    </div>
 
-    <div class="field">
-      <Select
-        :model-value="local.maritalStatus"
-        @update:model-value="onMaritalChange"
-        :options="maritalOptions"
-        option-label="label"
-        option-value="value"
-        placeholder="Marital status"
-        class="da-select"
-        fluid
-      />
+      <!-- Marital status -->
+      <div class="field">
+        <DaSearchSelect
+          v-model="maritalStatus"
+          :options="maritalOptions"
+          placeholder="Marital status"
+          field-outline="#CCCCCC"
+        />
+      </div>
+
+      <!-- Date of birth -->
+      <div class="field">
+        <label class="field-label" for="dob">Date of birth</label>
+        <DaDateField
+          id="dob"
+          v-model="dob"
+          :min-date="dobMin"
+          :max-date="dobMax"
+          field-outline="#CCCCCC"
+        />
+      </div>
     </div>
 
     <StickyNext :disabled="!canContinue" />
@@ -120,67 +107,38 @@ const canContinue = computed(() =>
   padding-top: 24px;
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 16px;
 }
 
+.md-form { display: flex; flex-direction: column; gap: 24px; }
 .field { display: flex; flex-direction: column; gap: 8px; }
 
 .field-label {
   margin: 0;
+  font-family: var(--da-font);
   font-size: 16px;
-  font-weight: 500;
-  color: var(--da-carbon);
-  line-height: 1.4;
+  font-weight: 600;
+  line-height: 20px;
+  color: #252525;
 }
 
-.yes-no { display: flex; gap: 8px; }
-.yn-button {
+/* Yes/No · Male/Female segmented pairs (48px, #CCCCCC outline). */
+.seg { display: flex; gap: 8px; }
+.seg-btn {
   flex: 1;
+  height: 48px;
+  padding: 12px 16px;
   background: #fff;
-  border: 1px solid var(--da-grey-300);
-  border-radius: var(--da-radius-card);
-  padding: 16px;
-  min-height: 56px;
-  font-size: 16px;
-  font-weight: 700;
-  color: var(--da-carbon);
+  border: 1px solid #CCCCCC;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
   font-family: var(--da-font);
-}
-.yn-button.is-selected {
-  border-color: var(--da-green);
-  box-shadow: 0 0 0 1px var(--da-green) inset;
-}
-
-.step :deep(.da-input .p-inputtext) {
-  font-family: var(--da-font);
-  background: #fff;
-  border: 1px solid var(--da-grey-300);
-  border-radius: var(--da-radius-card);
-  padding: 16px;
   font-size: 16px;
-  color: var(--da-carbon);
   font-weight: 500;
-  min-height: 56px;
+  color: #49454F;
 }
-.step :deep(.da-input .p-datepicker-trigger) {
-  background: transparent;
-  border: 0;
-  color: var(--da-carbon);
-}
-
-.step :deep(.da-select) { width: 100%; }
-.step :deep(.da-select .p-select) {
-  background: #fff;
-  border: 1px solid var(--da-grey-300);
-  border-radius: var(--da-radius-card);
-  min-height: 56px;
-}
-.step :deep(.da-select .p-select-label) {
-  font-family: var(--da-font);
-  color: var(--da-grey-600);
-  font-size: 16px;
-  padding: 16px;
-  font-weight: 500;
-}
+.seg-btn.is-on { background: var(--da-blue); color: #fff; }
 </style>

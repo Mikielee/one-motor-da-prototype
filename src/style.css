@@ -24,7 +24,8 @@
   --da-green-ring: #6AFF00;   /* Main Button — hover outline ring */
   --da-red: #DC2B1E;          /* Logo + footer links (brand red) */
   --da-error: #A94442;        /* Form/field error outline + message */
-  --da-blue: #457CBF;         /* Progress-bar active + selected card state */
+  --da-blue: #457CBF;         /* Progress-bar active + selected card/field state */
+  --da-blue-done: #80B4F4;    /* Progress-bar completed group (lighter blue) */
   --da-outline: #79747E;      /* Back-button outline (M3 Schemes/Outline) */
 
   /* Lines + greys */

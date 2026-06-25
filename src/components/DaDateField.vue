@@ -19,6 +19,8 @@ const props = defineProps({
   invalid: { type: Boolean, default: false },
   placeholder: { type: String, default: 'DD/MM/YYYY' },
   id: { type: String, default: undefined },
+  // Resting outline colour (Material steps use #79747E; some forms #CCCCCC).
+  fieldOutline: { type: String, default: '#79747E' },
 })
 const emit = defineEmits(['update:modelValue'])
 
@@ -107,6 +109,7 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', onDocClick))
     ref="root"
     class="da-datefield"
     :class="{ 'is-filled': filled, 'is-focused': focused || open, 'is-error': invalid, 'is-disabled': disabled }"
+    :style="{ '--df-outline': fieldOutline }"
   >
     <input
       :id="id"
@@ -151,7 +154,7 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', onDocClick))
   display: flex;
   align-items: center;
   background: #fff;
-  border: 1px solid var(--da-outline);
+  border: 1px solid var(--df-outline, var(--da-outline));
   border-radius: 4px;
   min-height: var(--da-field-height);
   transition: border-color 120ms ease;

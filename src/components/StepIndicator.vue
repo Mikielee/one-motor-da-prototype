@@ -56,9 +56,9 @@ const activeGroup = computed(() => route.meta?.group ?? 0)
   border-radius: var(--da-radius-pill);
   background: var(--da-bar-off);
 }
-/* Active + completed groups use the DA blue progress accent. */
-.da-step.is-active .da-step-label,
-.da-step.is-done .da-step-label { color: var(--da-blue); }
-.da-step.is-active .da-step-bar,
-.da-step.is-done .da-step-bar { background: var(--da-blue); }
+/* Active group = DA blue; completed groups = lighter blue. */
+.da-step.is-active .da-step-label { color: var(--da-blue); }
+.da-step.is-active .da-step-bar { background: var(--da-blue); }
+.da-step.is-done .da-step-label { color: var(--da-blue-done); }
+.da-step.is-done .da-step-bar { background: var(--da-blue-done); }
 </style>
