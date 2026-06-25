@@ -120,9 +120,11 @@ button {
   min-height: 47px;
   box-shadow: var(--da-btn-shadow);
 }
-/* Hover — same green, bright outline ring (Figma Main Button / Hover). */
+/* Hover — same green, bright green ring (Figma Main Button / Hover).
+   border-color reset so PrimeVue's primary border never tints the edge. */
 .p-button.da-primary:not(:disabled):hover {
   background: var(--da-green);
+  border-color: transparent;
   outline: 1px solid var(--da-green-ring);
   outline-offset: -1px;
 }
