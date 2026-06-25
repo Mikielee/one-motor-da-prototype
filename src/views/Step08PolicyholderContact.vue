@@ -237,10 +237,12 @@ function onNext() {
   align-items: center;
   gap: 12px;
   width: 100%;
+  min-height: 56px;
+  box-sizing: border-box;
   background: #fff;
   border: 1px solid #CCCCCC;
   border-radius: 4px;
-  padding: 16px;
+  padding: 0 16px;
   cursor: pointer;
   text-align: left;
 }
