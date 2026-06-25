@@ -204,8 +204,8 @@ button {
 .p-textarea {
   font-family: var(--da-font);
   background: #fff;
-  border: 1px solid var(--da-card-line);
-  border-radius: var(--da-radius-card);
+  border: 1px solid var(--da-outline);
+  border-radius: 4px;
   color: var(--da-ink);
   font-size: 16px;
   font-weight: 500;
@@ -217,7 +217,7 @@ button {
 
 .p-inputtext::placeholder,
 .p-textarea::placeholder {
-  color: var(--da-step-off);
+  color: #49454F;
   font-weight: 500;
 }
 
@@ -247,15 +247,31 @@ button {
   font-weight: 500;
   color: var(--da-ink);
 }
-.p-select .p-select-label.p-placeholder { color: var(--da-step-off); }
+.p-select .p-select-label.p-placeholder { color: #49454F; font-weight: 700; }
+/* Disabled select — greyed surface (Brand/Model before their prior is picked). */
+.p-select.p-disabled {
+  background: #F5F6F7;
+  border-color: var(--da-outline);
+  opacity: 1;
+}
+.p-select.p-disabled .p-select-label.p-placeholder { color: var(--da-radio-line); }
 
 .p-select-overlay {
   border: 1px solid var(--da-line-soft);
-  border-radius: var(--da-radius-card);
+  border-radius: 8px;
   background: #fff;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
 }
 .p-select-list { padding: 4px 0; }
+/* Grouped headers — "Popular brands" / "All brands". */
+.p-select-option-group {
+  font-family: var(--da-font);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--da-step-off);
+  padding: 8px 16px 4px;
+  text-transform: none;
+}
 .p-select-option {
   font-family: var(--da-font);
   color: var(--da-ink);
@@ -268,6 +284,20 @@ button {
   color: var(--da-blue);
   font-weight: 700;
 }
+/* Filter (search) box inside the overlay — magnifier + "Search" placeholder. */
+.p-select-overlay .p-select-header { padding: 8px; }
+.p-select-overlay .p-select-filter {
+  border: 1px solid var(--da-outline);
+  border-radius: 4px;
+  font-size: 16px;
+  min-height: 44px;
+  width: 100%;
+  padding: 0 16px 0 42px;
+  background: #fff url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="%2349454F" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>') no-repeat 16px center;
+}
+.p-select-overlay .p-select-filter:focus { border-color: var(--da-blue); outline: 0; }
+/* Hide PrimeVue's built-in filter icon — we draw our own magnifier on the left. */
+.p-select-overlay .p-select-filter-icon { display: none; }
 
 /* ============================================================
    Inline field error caption — standard red message shown below a
