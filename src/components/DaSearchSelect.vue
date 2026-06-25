@@ -87,7 +87,7 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', onDocClick))
     <div v-if="open" class="da-ss-panel">
       <div v-if="searchable" class="da-ss-search">
         <span class="da-ss-search-ic" aria-hidden="true">
-          <img src="/search-icon.png" alt="" width="20" height="20" />
+          <img src="/search-icon.png" alt="" width="24" height="24" />
         </span>
         <input
           ref="searchInput"
