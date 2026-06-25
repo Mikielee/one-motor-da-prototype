@@ -22,9 +22,9 @@
   --da-green-pressed: #8FDB5F;/* Main Button — active / pressed (lighter) */
   --da-green-focus: #5FA236;  /* Main Button — focus (darker) */
   --da-green-ring: #6AFF00;   /* Main Button — hover outline ring */
-  --da-red: #DC2B1E;          /* Logo, links, error */
+  --da-red: #DC2B1E;          /* Logo + footer links (brand red) */
+  --da-error: #A94442;        /* Form/field error outline + message */
   --da-blue: #457CBF;         /* Progress-bar active + selected card state */
-  --da-blue-tint: #EAF1FA;    /* Selected card background tint */
   --da-outline: #79747E;      /* Back-button outline (M3 Schemes/Outline) */
 
   /* Lines + greys */
@@ -231,7 +231,7 @@ button {
 .p-inputtext.p-invalid,
 .p-select.p-invalid,
 .p-textarea.p-invalid {
-  border-color: var(--da-red);
+  border-color: var(--da-error);
 }
 
 .p-select {
@@ -272,8 +272,8 @@ button {
    field or option group when the user tries to continue with it invalid.
    ============================================================ */
 .da-field-error {
-  color: var(--da-red);
-  font-size: 14px;
+  color: var(--da-error);
+  font-size: 12px;
   font-weight: 500;
   line-height: 1.4;
   margin: 0;

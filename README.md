@@ -20,9 +20,9 @@ links, primary CTA), and a **blue** progress/selected accent on slate ink —
 | `--da-yellow` | `#FCD900` | CTA zone + footer surface |
 | `--da-yellow-chip` | `rgba(254,236,128,0.5)` | "Car Insurance" header chip |
 | `--da-green` | `#75BB49` | Enabled primary CTA |
-| `--da-red` | `#DC2B1E` | Logo, footer links, error |
+| `--da-red` | `#DC2B1E` | Logo + footer links (brand red) |
+| `--da-error` | `#A94442` | Form/field error outline + message |
 | `--da-blue` | `#457CBF` | Progress-bar active + selected card state |
-| `--da-blue-tint` | `#EAF1FA` | Selected card background tint |
 | `--da-outline` | `#79747E` | Back-button outline |
 | `--da-ink` | `#333F48` | Primary text + headings (Carbon) |
 | `--da-card-line` | `#49454F` | Cover-card / control outline |
@@ -43,8 +43,28 @@ disabled `#DCDCDD` bg / `#949396` text. **Back** button = yellow fill +
 `#79747E` outline + soft shadow. All buttons 47px tall, 8px radius, shadow
 `0 4px 4px rgba(0,0,0,.25)`.
 
-> **Selected/active state = blue `#457CBF`** (border + radio + light blue tint),
-> confirmed by Mikie. Green `#75BB49` is the enabled CTA only.
+### Radio-option card (Frame 683) states
+
+White background in every state except disabled; the outline is an **inset ring
+(box-shadow), not a border**, so 1px→2px never shifts content. The selected
+state is a **2px blue ring — NOT a tint**.
+
+| State | Outline | Radio |
+|---|---|---|
+| Default | 1px `#49454F` | `#999999`, empty |
+| Selected | **2px `#457CBF`** | filled `#457CBF` |
+| Hover | 1px `#49454F` + drop shadow | empty |
+| Focus | 1px `#457CBF` | empty |
+| Error | 1px `#A94442` + message `#A94442` 12/500 | empty |
+| Disabled | 1px `#CCCCCC`, bg `#E8E8E8`, text `#979797` | `#E8E8E8` |
+
+## How to build a step (don't skip)
+
+Every component has a **full state sheet** in Figma. Pull it before coding —
+do not infer states from the default frame. The mandatory process (find the OMP
+story in Notion → read its `Figma Component` + `Decisions`/`Acceptance Criteria`
+→ pull the DA component's every state variant → build → verify each state at
+375px) is recorded in the project memory `da-prototype-workflow`.
 
 ## DA page sequence (price last)
 

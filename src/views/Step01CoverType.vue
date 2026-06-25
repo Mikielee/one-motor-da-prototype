@@ -85,42 +85,48 @@ function select(value) {
   gap: 8px;
 }
 
-/* Default — white card, 1px slate outline (Figma node 3936:2058). */
+/* Radio-option card states — DA "Frame 683" component sheet. The outline is an
+   inset box-shadow (not a border) so the 1px -> 2px selected change never
+   shifts the card's content. Background stays WHITE in every state except
+   disabled — the selected state is a 2px blue ring, NOT a tint. */
 .cover-card {
   display: flex;
   align-items: center;
   gap: 16px;
   width: 100%;
   background: #fff;
-  border: 1px solid var(--da-card-line);
+  border: 0;
   border-radius: var(--da-radius-card);
   padding: 16px;
   text-align: left;
   cursor: pointer;
-  transition: border-color 120ms ease, background 120ms ease;
+  box-shadow: inset 0 0 0 1px var(--da-card-line);
+  transition: box-shadow 120ms ease;
 }
 
-/* Hover (desktop only) — subtle darken of the outline. */
+/* Hover (desktop only) — default outline + soft drop shadow. */
 @media (hover: hover) {
-  .cover-card:hover { border-color: var(--da-ink); }
+  .cover-card:hover {
+    box-shadow: inset 0 0 0 1px var(--da-card-line),
+                0 2px 4px rgba(0, 0, 0, 0.10), 0 1px 1px rgba(0, 0, 0, 0.05);
+  }
 }
 
-/* Focus — visible blue outline for keyboard users (OMP-6 AC 3). */
+/* Focus — 1px blue ring for keyboard users (OMP-6 AC 3). */
 .cover-card:focus-visible {
-  outline: 2px solid var(--da-blue);
-  outline-offset: 2px;
+  outline: none;
+  box-shadow: inset 0 0 0 1px var(--da-blue);
 }
 
-/* Selected — blue radio + blue outline + light blue tint (OMP-6 AC 4).
-   DA uses the blue accent for the selected/active card state. */
-.cover-card.is-selected {
-  border-color: var(--da-blue);
-  background: var(--da-blue-tint);
+/* Selected — 2px blue ring + blue-filled radio, white bg (OMP-6 AC 4). */
+.cover-card.is-selected,
+.cover-card.is-selected:hover {
+  box-shadow: inset 0 0 0 2px var(--da-blue);
 }
 
-/* Error — red outline on every card until one is picked (OMP-6 AC 5). */
+/* Error — 1px error-red ring on every card until one is picked (OMP-6 AC 5). */
 .cover-card.is-error {
-  border-color: var(--da-red);
+  box-shadow: inset 0 0 0 1px var(--da-error);
 }
 
 .cover-radio {
