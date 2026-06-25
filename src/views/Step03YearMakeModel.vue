@@ -1,6 +1,6 @@
 <script setup>
 import { computed, onMounted } from 'vue'
-import Select from 'primevue/select'
+import DaSearchSelect from '../components/DaSearchSelect.vue'
 import StickyNext from '../components/StickyNext.vue'
 import { useQuote } from '../store/quote'
 import { useValidation } from '../composables/useValidation'
@@ -13,10 +13,11 @@ const isThirdParty = computed(() =>
   quote.coverType === 'third-party' || quote.coverType === 'third-party-fire-theft'
 )
 const currentYear = new Date().getFullYear()
-const yearOptions = computed(() => {
+const yearValues = computed(() => {
   const span = isThirdParty.value ? 15 : 30 // TP capped at 15 years old
   return Array.from({ length: span + 1 }, (_, i) => currentYear - i)
 })
+const yearOptions = computed(() => yearValues.value.map((y) => ({ label: String(y), value: y })))
 
 // --- Brand list: grouped Popular + All (alphabetical), searchable ---
 const popular = ['BMW', 'BYD', 'Honda', 'Hyundai', 'KIA']
@@ -77,7 +78,7 @@ const model = computed({
 // On return to Step 3, if cover type tightened and the picked year is now out of
 // range, clear Year + Brand + Model (OMP-89 AC).
 onMounted(() => {
-  if (quote.carYear && !yearOptions.value.includes(quote.carYear)) {
+  if (quote.carYear && !yearValues.value.includes(quote.carYear)) {
     mutable.carYear = null
     mutable.carMake = null
     mutable.carModel = null
@@ -98,12 +99,11 @@ const modelError = computed(() => showErrors.value && quote.carYear && quote.car
 
     <div class="ymm-form">
       <div class="field" :data-error="yearError ? 'true' : null">
-        <Select
+        <DaSearchSelect
           v-model="year"
           :options="yearOptions"
           placeholder="Year"
           :invalid="yearError"
-          fluid
         />
         <p v-if="isThirdParty" class="ymm-hint">
           Third-party covers are available for cars up to 15 years old.
@@ -111,34 +111,25 @@ const modelError = computed(() => showErrors.value && quote.carYear && quote.car
       </div>
 
       <div class="field" :data-error="makeError ? 'true' : null">
-        <Select
+        <DaSearchSelect
           v-model="make"
           :options="brandGroups"
-          option-label="label"
-          option-value="value"
-          option-group-label="label"
-          option-group-children="items"
-          filter
-          filter-placeholder="Search"
+          grouped
+          searchable
           placeholder="Car brand"
           :disabled="!quote.carYear"
           :invalid="makeError"
-          fluid
         />
       </div>
 
       <div class="field" :data-error="modelError ? 'true' : null">
-        <Select
+        <DaSearchSelect
           v-model="model"
           :options="modelOptions"
-          option-label="label"
-          option-value="value"
-          filter
-          filter-placeholder="Search"
+          searchable
           placeholder="Car model"
           :disabled="!quote.carMake"
           :invalid="modelError"
-          fluid
         />
       </div>
     </div>
