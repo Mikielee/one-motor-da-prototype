@@ -202,8 +202,8 @@ function onNext() {
 .da-text-input:focus { border-color: var(--da-blue); outline: 0; }
 .da-text-input.is-error { border-color: var(--da-error); }
 
-/* Mobile +65 composite. */
-.mobile-row { display: flex; }
+/* Mobile +65 composite — narrower field, left-aligned (Figma 252px). */
+.mobile-row { display: flex; width: 252px; max-width: 100%; }
 .mobile-prefix {
   display: inline-flex;
   align-items: center;
@@ -236,7 +236,8 @@ function onNext() {
   display: flex;
   align-items: center;
   gap: 12px;
-  width: 100%;
+  width: 252px;
+  max-width: 100%;
   min-height: 56px;
   box-sizing: border-box;
   background: #fff;
