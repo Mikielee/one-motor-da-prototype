@@ -62,9 +62,16 @@ html, body {
 }
 
 #app {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
+  min-height: 100dvh;
+}
+/* On wider screens, centre the phone frame on a neutral backdrop. */
+@media (min-width: 480px) {
+  #app {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+  }
 }
 
 * { box-sizing: border-box; }
@@ -83,22 +90,29 @@ button {
   cursor: pointer;
 }
 
+/* The phone screen: a fixed-height frame so header + progress stay pinned at the
+   top, the content scrolls in the middle, and the CTA bar sticks to the bottom. */
 .da-shell {
   width: 100%;
   max-width: var(--da-max-mobile);
   margin: 0 auto;
   background: var(--da-bg);
-  min-height: 100vh;
+  height: 100dvh;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
   position: relative;
 }
+/* Header + progress are fixed chrome; only the content region scrolls. */
+.da-header,
+.da-steps { flex: 0 0 auto; }
 
 @media (min-width: 480px) {
   body { background: #ECECEC; }
   .da-shell {
-    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
-    background: var(--da-bg);
+    height: min(880px, 94dvh);
+    border-radius: 28px;
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.18);
   }
 }
 

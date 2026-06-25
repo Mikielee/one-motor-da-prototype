@@ -82,7 +82,12 @@ function onBack() {
 </template>
 
 <style scoped>
+/* Sticks to the bottom of the scrolling content region: always visible while
+   the page scrolls, then rests above the footer at the very end. */
 .sticky-cta {
+  position: sticky;
+  bottom: 0;
+  z-index: 20;
   background: var(--da-yellow);
   padding: 16px;
   display: flex;
