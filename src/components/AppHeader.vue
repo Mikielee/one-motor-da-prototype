@@ -1,101 +1,67 @@
 <script setup>
+// da-logo.png lives in /public, so Vite serves it at the site root.
 </script>
 
 <template>
   <header class="da-header">
     <a class="da-logo" href="/" aria-label="DirectAsia Insurance home">
-      <span class="da-logo-wordmark" aria-hidden="true">
-        <span class="da-logo-line">
-          <span class="ink">Direct</span><span class="teal">Asia</span><sup class="reg">®</sup>
-        </span>
-      </span>
-      <span class="da-logo-tagline">Insurance made easy</span>
+      <img src="/da-logo.png" alt="DirectAsia Insurance" class="da-logo-img" />
     </a>
     <div class="da-header-right">
-      <button class="da-product-chip" type="button">
-        <i class="pi pi-car da-chip-icon" aria-hidden="true"></i>
-        <span>Car Insurance</span>
-      </button>
+      <span class="da-product-chip">Car Insurance</span>
       <button class="da-menu" type="button" aria-label="Open menu">
-        <i class="pi pi-bars" aria-hidden="true"></i>
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M18.6087 7.06433H5.39132C4.48751 7.06433 3.75 6.40011 3.75 5.57147C3.75 4.74284 4.48751 4.07861 5.39132 4.07861H18.6087C19.5125 4.07861 20.25 4.74941 20.25 5.57147C20.25 6.39353 19.5125 7.06433 18.6087 7.06433Z" fill="#333F48"/>
+          <path d="M18.6087 13.4698H5.39132C4.48751 13.4698 3.75 12.799 3.75 11.977C3.75 11.1549 4.48751 10.4841 5.39132 10.4841H18.6087C19.5125 10.4841 20.25 11.1549 20.25 11.977C20.25 12.799 19.5125 13.4698 18.6087 13.4698Z" fill="#333F48"/>
+          <path d="M18.6087 19.4413H5.39132C4.48751 19.4413 3.75 18.7705 3.75 17.9484C3.75 17.1264 4.48751 16.4556 5.39132 16.4556H18.6087C19.5125 16.4556 20.25 17.1264 20.25 17.9484C20.25 18.7705 19.5125 19.4413 18.6087 19.4413Z" fill="#333F48"/>
+        </svg>
       </button>
     </div>
   </header>
 </template>
 
 <style scoped>
+/* Header — Figma node 5535:5065. White bar, grey bottom divider, 84px tall. */
 .da-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   height: 84px;
-  padding: 0 16px;
+  padding: 17px 16px;
   background: #fff;
-  border-bottom: 1px solid var(--da-grey-200);
+  border-bottom: 1px solid var(--da-line);
 }
 
 .da-logo {
-  display: flex;
-  flex-direction: column;
-  text-decoration: none;
-  color: inherit;
-  gap: 2px;
-  line-height: 1;
-}
-
-.da-logo-tagline {
-  font-size: 10px;
-  font-weight: 500;
-  color: var(--da-grey-600);
-  letter-spacing: 0.2px;
-  margin-top: 2px;
-}
-
-.da-logo-wordmark {
-  font-family: var(--da-font);
-  font-weight: 800;
-  letter-spacing: -0.02em;
   display: inline-flex;
-  flex-direction: column;
-  line-height: 1;
+  align-items: center;
+  text-decoration: none;
 }
-.da-logo-line {
-  font-size: 24px;
-  display: inline-block;
-}
-.da-logo-line .ink { color: var(--da-carbon); }
-.da-logo-line .teal { color: var(--da-green); }
-.da-logo-line .reg {
-  font-size: 9px;
-  font-weight: 700;
-  color: var(--da-green);
-  margin-left: 1px;
-  vertical-align: super;
+.da-logo-img {
+  width: 72px;
+  height: 51px;
+  object-fit: contain;
+  display: block;
 }
 
 .da-header-right {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 16px;
 }
 
+/* "Car Insurance" chip — translucent yellow, black text, Montserrat 14/500. */
 .da-product-chip {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
   padding: 6px 12px;
-  background: var(--da-grey-100);
-  border: 1px solid var(--da-grey-200);
-  border-radius: var(--da-radius-pill);
-  color: var(--da-carbon);
-  font-weight: 700;
+  background: var(--da-yellow-chip);
+  border-radius: var(--da-radius-card);
+  color: #000;
+  font-weight: 500;
   font-size: 14px;
-  cursor: pointer;
-}
-
-.da-chip-icon {
-  font-size: 16px;
-  color: var(--da-green);
+  line-height: 1.4;
+  white-space: nowrap;
 }
 
 .da-menu {
@@ -108,7 +74,5 @@
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  color: var(--da-carbon);
 }
-.da-menu .pi { font-size: 20px; }
 </style>

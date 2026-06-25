@@ -4,6 +4,7 @@ import { useRoute } from 'vue-router'
 
 const route = useRoute()
 
+// DA progress groups — Figma node 4970:8742 (DA/ProgressBar).
 const groups = [
   { id: 0, label: 'Your Car' },
   { id: 1, label: 'Your Details' },
@@ -32,7 +33,7 @@ const activeGroup = computed(() => route.meta?.group ?? 0)
 .da-steps {
   display: flex;
   gap: 8px;
-  padding: 16px 16px 0 16px;
+  padding: 24px 16px 0 16px;
   background: var(--da-bg);
 }
 .da-step {
@@ -43,9 +44,9 @@ const activeGroup = computed(() => route.meta?.group ?? 0)
   gap: 8px;
 }
 .da-step-label {
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 500;
-  color: var(--da-grey-600);
+  color: var(--da-step-off);
   text-align: center;
   line-height: 1.3;
 }
@@ -53,10 +54,11 @@ const activeGroup = computed(() => route.meta?.group ?? 0)
   width: 100%;
   height: 4px;
   border-radius: var(--da-radius-pill);
-  background: var(--da-grey-300);
+  background: var(--da-bar-off);
 }
-.da-step.is-active .da-step-label { color: var(--da-green); }
-.da-step.is-active .da-step-bar { background: var(--da-green); }
-.da-step.is-done .da-step-label { color: var(--da-carbon); }
-.da-step.is-done .da-step-bar { background: var(--da-green); }
+/* Active + completed groups use the DA blue progress accent. */
+.da-step.is-active .da-step-label,
+.da-step.is-done .da-step-label { color: var(--da-blue); }
+.da-step.is-active .da-step-bar,
+.da-step.is-done .da-step-bar { background: var(--da-blue); }
 </style>

@@ -1,10 +1,14 @@
 <script setup>
 import { computed } from 'vue'
 import StickyNext from '../components/StickyNext.vue'
+import FieldError from '../components/FieldError.vue'
 import { useQuote } from '../store/quote'
+import { useValidation } from '../composables/useValidation'
 
 const { quote, mutable } = useQuote()
+const { showErrors, reveal } = useValidation()
 
+// Fixed order, no pre-selected default (OMP-6 requirements 3 & 4).
 const options = [
   {
     value: 'comprehensive',
@@ -24,6 +28,7 @@ const options = [
 ]
 
 const canContinue = computed(() => Boolean(quote.coverType))
+const hasError = computed(() => showErrors.value && !canContinue.value)
 
 function select(value) {
   mutable.coverType = value
@@ -32,9 +37,14 @@ function select(value) {
 
 <template>
   <section class="step">
-    <h1 class="da-section-title">What cover do you need?</h1>
+    <h1 class="da-section-title">Which cover do you need?</h1>
 
-    <div class="cover-options" role="radiogroup" aria-label="Cover type">
+    <div
+      class="cover-options"
+      role="radiogroup"
+      aria-label="Cover type"
+      :data-error="hasError ? 'true' : null"
+    >
       <button
         v-for="opt in options"
         :key="opt.value"
@@ -42,7 +52,7 @@ function select(value) {
         role="radio"
         :aria-checked="quote.coverType === opt.value"
         class="cover-card"
-        :class="{ 'is-selected': quote.coverType === opt.value }"
+        :class="{ 'is-selected': quote.coverType === opt.value, 'is-error': hasError }"
         @click="select(opt.value)"
       >
         <span class="cover-radio" :class="{ 'is-on': quote.coverType === opt.value }">
@@ -55,7 +65,9 @@ function select(value) {
       </button>
     </div>
 
-    <StickyNext :disabled="!canContinue" />
+    <FieldError :show="hasError" message="Select a cover option." />
+
+    <StickyNext :disabled="!canContinue" @blocked="reveal" />
   </section>
 </template>
 
@@ -73,24 +85,44 @@ function select(value) {
   gap: 8px;
 }
 
+/* Default — white card, 1px slate outline (Figma node 3936:2058). */
 .cover-card {
   display: flex;
-  align-items: flex-start;
-  gap: 12px;
+  align-items: center;
+  gap: 16px;
   width: 100%;
   background: #fff;
-  border: 1px solid var(--da-grey-200);
+  border: 1px solid var(--da-card-line);
   border-radius: var(--da-radius-card);
   padding: 16px;
   text-align: left;
   cursor: pointer;
-  transition: border-color 120ms ease, box-shadow 120ms ease;
+  transition: border-color 120ms ease, background 120ms ease;
 }
 
-.cover-card:hover { border-color: var(--da-grey-500); }
+/* Hover (desktop only) — subtle darken of the outline. */
+@media (hover: hover) {
+  .cover-card:hover { border-color: var(--da-ink); }
+}
+
+/* Focus — visible green outline for keyboard users (OMP-6 AC 3). */
+.cover-card:focus-visible {
+  outline: 2px solid var(--da-green);
+  outline-offset: 2px;
+}
+
+/* Selected — green radio + green outline + light green tint (OMP-6 AC 4).
+   Uses the DA affirmative green (same as the enabled CTA #75BB49), matching
+   BD's documented "selected = green" pattern. Still pending an explicit
+   selected-state Figma frame. */
 .cover-card.is-selected {
   border-color: var(--da-green);
-  box-shadow: 0 0 0 1px var(--da-green) inset;
+  background: var(--da-green-tint);
+}
+
+/* Error — red outline on every card until one is picked (OMP-6 AC 5). */
+.cover-card.is-error {
+  border-color: var(--da-red);
 }
 
 .cover-radio {
@@ -98,23 +130,23 @@ function select(value) {
   width: 16px;
   height: 16px;
   border-radius: 50%;
-  border: 1.5px solid var(--da-grey-500);
+  border: 1px solid var(--da-radio-line);
+  background: #fff;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  margin-top: 2px;
 }
 .cover-radio.is-on {
   border-color: var(--da-green);
 }
 .cover-radio-dot {
-  width: 8px;
-  height: 8px;
+  width: 10.66px;
+  height: 10.66px;
   border-radius: 50%;
   background: var(--da-green);
 }
 
 .cover-text { display: flex; flex-direction: column; gap: 4px; }
-.cover-title { font-size: 14px; font-weight: 900; color: var(--da-carbon); }
-.cover-desc { font-size: 12px; font-weight: 500; color: var(--da-carbon); line-height: 1.4; }
+.cover-title { font-size: 16px; font-weight: 700; color: var(--da-ink); line-height: 1.3; }
+.cover-desc { font-size: 12px; font-weight: 500; color: var(--da-ink); line-height: 1.4; }
 </style>

@@ -9,7 +9,15 @@ const props = defineProps({
   label: { type: String, default: 'Next' },
   hideBack: { type: Boolean, default: false },
   price: { type: String, default: '' },
+  // Cadence label under the running price. Defaults to "Total" — never "per
+  // year": DA cover term flexes 7–18 months (KB f1898394 / 38971919), so a
+  // yearly framing is inaccurate and exposes us to MAS premium-display rules.
+  priceUnit: { type: String, default: 'Total' },
 })
+
+// `blocked` fires when the user clicks Next while the step is still invalid, so
+// the parent can reveal its field errors.
+const emit = defineEmits(['blocked'])
 
 const router = useRouter()
 const route = useRoute()
@@ -18,7 +26,12 @@ const step = computed(() => route.meta?.step ?? 1)
 const showBack = computed(() => !props.hideBack && step.value > 1)
 
 function onNext() {
-  if (props.disabled) return
+  // The button looks grey but stays clickable: a click while invalid reveals
+  // the errors instead of navigating.
+  if (props.disabled) {
+    emit('blocked')
+    return
+  }
   if (props.to !== null) {
     router.push(typeof props.to === 'object' ? props.to : props.to)
     return
@@ -33,10 +46,12 @@ function onBack() {
 </script>
 
 <template>
+  <!-- Yellow CTA zone — Figma node 3983:2888. Rounded top corners curve over
+       the white content above; the yellow continues straight into the footer. -->
   <div class="sticky-cta">
     <div v-if="price" class="sticky-price">
       <span class="sticky-price-amt">{{ price }}</span>
-      <span class="sticky-price-unit">per year (incl. GST)</span>
+      <span class="sticky-price-unit">{{ priceUnit }}</span>
     </div>
     <div class="sticky-actions">
       <button
@@ -50,7 +65,8 @@ function onBack() {
       </button>
       <Button
         class="da-primary"
-        :disabled="disabled"
+        :class="{ 'is-blocked': disabled }"
+        :aria-disabled="disabled ? 'true' : 'false'"
         :label="label"
         @click="onNext"
       />
@@ -59,18 +75,15 @@ function onBack() {
 </template>
 
 <style scoped>
-/* Sticky CTA sits in the normal document flow (above the footer) per
-   Figma 3902-1286: sticky bar then footer, never overlapping. */
 .sticky-cta {
-  background: #fff;
+  background: var(--da-yellow);
   padding: 16px;
-  border-top: 1px solid var(--da-grey-200);
   display: flex;
   flex-direction: column;
   gap: 12px;
   margin: auto -16px 0 -16px;
-  border-top-left-radius: 8px;
-  border-top-right-radius: 8px;
+  border-top-left-radius: var(--da-radius-lg);
+  border-top-right-radius: var(--da-radius-lg);
 }
 
 .sticky-price {
@@ -81,12 +94,12 @@ function onBack() {
 }
 .sticky-price-amt {
   font-size: 22px;
-  font-weight: 900;
-  color: var(--da-carbon);
+  font-weight: 700;
+  color: var(--da-ink);
 }
 .sticky-price-unit {
   font-size: 13px;
-  color: var(--da-grey-600);
+  color: var(--da-ink);
 }
 
 .sticky-actions {
@@ -95,21 +108,24 @@ function onBack() {
   align-items: center;
 }
 
+/* Back button — Figma "Frame 1007": yellow fill on the yellow zone, grey M3
+   outline, soft shadow, dark chevron. */
 .sticky-back {
   flex: 0 0 72px;
   width: 72px;
-  height: 48px;
-  background: #fff;
-  border: 1px solid var(--da-carbon);
-  border-radius: 8px;
+  height: 47px;
+  background: var(--da-yellow);
+  border: 1px solid var(--da-outline);
+  border-radius: var(--da-radius-card);
+  box-shadow: var(--da-btn-shadow);
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  color: var(--da-carbon);
+  color: #1D1B20;
   cursor: pointer;
   padding: 0;
 }
-.sticky-back:hover { background: var(--da-grey-100); }
+.sticky-back:hover { background: #F3D200; }
 .sticky-back .pi { font-size: 16px; }
 
 .sticky-actions :deep(.p-button.da-primary) {

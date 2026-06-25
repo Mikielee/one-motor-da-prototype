@@ -17,20 +17,24 @@
 </template>
 
 <style scoped>
+/* Footer — Figma node 3936:1896. Yellow surface, continues straight under the
+   yellow CTA zone above it. Red links, slate body. */
 .da-footer {
-  background: #fff;
+  background: var(--da-yellow);
   padding: 16px;
-  border-top: 1px solid var(--da-grey-200);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
 .da-footer-body {
-  margin: 0 0 16px 0;
-  color: var(--da-grey-600);
+  margin: 0;
+  color: var(--da-ink);
   font-size: 12px;
+  font-weight: 500;
   line-height: 1.5;
 }
-
-.da-footer-body strong { color: var(--da-grey-600); font-weight: 700; }
+.da-footer-body strong { color: var(--da-ink); font-weight: 700; }
 
 .da-footer-links {
   display: flex;
@@ -39,7 +43,8 @@
   font-size: 12px;
 }
 .da-footer-links a {
-  color: var(--da-cyan);
+  color: var(--da-red);
+  font-weight: 500;
   text-decoration: none;
   white-space: nowrap;
 }

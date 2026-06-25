@@ -9,27 +9,29 @@ import './style.css'
 import App from './App.vue'
 import router from './router'
 
-// DirectAsia primary CTA / focus / selected state is TEAL #00B2A9 (One Motor PRD §3.2).
-// Calm, trustworthy, detail-oriented — the DA brand personality.
+// DirectAsia design system (One Motor Design System Figma):
+//   - primary action / brand red  #DC2B1E  (logo, links, CTA, error)
+//   - progress + selected accent  #457CBF  (blue) -> used as focus ring
+// Type is Montserrat (loaded in index.html).
 const DAPreset = definePreset(Aura, {
   semantic: {
     primary: {
-      50: '#E6FBF8',
-      100: '#C0F2EC',
-      200: '#86E5DC',
-      300: '#4DD6CB',
-      400: '#1FC2B6',
-      500: '#00B2A9',
-      600: '#009990',
-      700: '#007F78',
-      800: '#006660',
-      900: '#004D48',
-      950: '#003330',
+      50: '#FCEAE8',
+      100: '#F7C9C5',
+      200: '#EFA39D',
+      300: '#E97B72',
+      400: '#E35349',
+      500: '#DC2B1E',
+      600: '#C3261A',
+      700: '#A91F15',
+      800: '#8C1911',
+      900: '#6E130D',
+      950: '#4F0D09',
     },
     focusRing: {
       width: '2px',
       style: 'solid',
-      color: '#00B2A9',
+      color: '#457CBF',
       offset: '2px',
     },
   },

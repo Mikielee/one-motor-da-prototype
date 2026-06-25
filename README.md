@@ -10,28 +10,40 @@ Figma file `M0iwRMwawqrDrMHl61p6je` (One Motor Design System) — DirectAsia fra
 
 ## Brand design system (DirectAsia)
 
-DA's personality is **calm, trustworthy, detail-oriented** — the opposite of BDI's bold, price-forward energy.
+Pulled directly from the One Motor Design System Figma (Step 1 frame `3936:791`,
+DA side). DA uses a **yellow action/footer zone**, **red brand accents** (logo,
+links, primary CTA), and a **blue** progress/selected accent on slate ink —
+**not** the teal palette that earlier drafts of this file assumed.
 
 | Token (`--da-*`) | Value | Use |
 |---|---|---|
-| `--da-green` (primary teal) | `#00B2A9` | Primary CTA, selected state, focus, active progress |
-| `--da-green-dark` | `#009990` | Primary hover |
-| `--da-green-darker` | `#007F78` | Primary active |
-| `--da-carbon` (ink) | `#2D3748` | Primary text + outlines |
-| `--da-cyan` | `#009990` | Links |
-| `--da-accent` | `#FF6B35` | Accent / highlights |
-| `--da-red` | `#E53E3E` | Error only |
-| `--da-success` / `--da-success-bg` | `#38A169` / `#E6FBF8` | Eligible / positive states |
-| `--da-grey-100` (surface) | `#F7F9FC` | Chip / callout background |
-| `--da-grey-200` / `300` | `#E2E8F0` | Borders, input borders |
-| `--da-grey-600` | `#718096` | Secondary text |
-| `--da-bg` | `#F7F9FC` | Page background |
-| `--da-radius-card` | `8px` | Buttons + inputs |
-| `--da-radius-lg` | `16px` | Card surfaces (softer than BDI) |
+| `--da-yellow` | `#FCD900` | CTA zone + footer surface |
+| `--da-yellow-chip` | `rgba(254,236,128,0.5)` | "Car Insurance" header chip |
+| `--da-green` | `#75BB49` | Enabled primary CTA + selected state |
+| `--da-green-tint` | `#EEF6E9` | Selected card background tint |
+| `--da-red` | `#DC2B1E` | Logo, footer links, error |
+| `--da-blue` | `#457CBF` | Progress-bar active |
+| `--da-outline` | `#79747E` | Back-button outline |
+| `--da-ink` | `#333F48` | Primary text + headings (Carbon) |
+| `--da-card-line` | `#49454F` | Cover-card / control outline |
+| `--da-radio-line` | `#999999` | Radio + checkbox stroke |
+| `--da-step-off` / `--da-bar-off` | `#79747E` / `#CCCCCC` | Inactive progress label / bar |
+| `--da-disabled-bg` / `--da-disabled-ink` | `#E8E8E8` / `#979797` | Blocked (looks-disabled) button |
+| `--da-line` / `--da-line-soft` | `#D8D8D8` / `#E4E4E4` | Header dividers |
+| `--da-bg` | `#FFFFFF` | Page background (white) |
+| `--da-radius-card` | `8px` | Buttons + inputs + cards |
+| `--da-radius-lg` | `16px` | Yellow CTA zone top corners |
 
-Font: **Inter** (Google Fonts) — clean and professional. (BDI uses Nunito Sans.)
+Font: **Montserrat** (Google Fonts). (BDI uses Museo/Nunito Sans.)
 
-> Token NAMES are kept stable across both brand skins so the shared views never change between BDI and DA — only the values in `src/style.css` (`:root`) and the PrimeVue preset in `src/main.js` change.
+The sticky CTA bar (Figma QuoteFooter / Main Button): yellow zone, rounded-top
+16px. **Enabled** Next = green `#75BB49` + white text. **Blocked/disabled** =
+`#E8E8E8` + `#979797`. **Back** button = yellow fill + `#79747E` outline + soft
+shadow. All buttons 47px tall, 8px radius, shadow `0 4px 4px rgba(0,0,0,.25)`.
+
+> The **selected card** state is set to the same green (`#75BB49`), matching
+> BD's documented "selected = green" pattern, pending an explicit DA
+> selected-state Figma frame.
 
 ## DA page sequence (price last)
 
