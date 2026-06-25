@@ -87,9 +87,7 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', onDocClick))
     <div v-if="open" class="da-ss-panel">
       <div v-if="searchable" class="da-ss-search">
         <span class="da-ss-search-ic" aria-hidden="true">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-            <path d="M19.6 21L13.3 14.7C12.8 15.1 12.225 15.4167 11.575 15.65C10.925 15.8833 10.2333 16 9.5 16C7.68333 16 6.14583 15.3708 4.8875 14.1125C3.62917 12.8542 3 11.3167 3 9.5C3 7.68333 3.62917 6.14583 4.8875 4.8875C6.14583 3.62917 7.68333 3 9.5 3C11.3167 3 12.8542 3.62917 14.1125 4.8875C15.3708 6.14583 16 7.68333 16 9.5C16 10.2333 15.8833 10.925 15.65 11.575C15.4167 12.225 15.1 12.8 14.7 13.3L21 19.6L19.6 21Z" fill="#49454F" />
-          </svg>
+          <img src="/search-icon.png" alt="" width="20" height="20" />
         </span>
         <input
           ref="searchInput"
