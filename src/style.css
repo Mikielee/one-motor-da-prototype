@@ -23,7 +23,8 @@
   --da-green-active: #5E9A3A;
   --da-green-tint: #EEF6E9;   /* Selected card background tint */
   --da-red: #DC2B1E;          /* Logo, links, error */
-  --da-blue: #457CBF;         /* Progress-bar active */
+  --da-blue: #457CBF;         /* Progress-bar active + selected card state */
+  --da-blue-tint: #EAF1FA;    /* Selected card background tint */
   --da-outline: #79747E;      /* Back-button outline (M3 Schemes/Outline) */
 
   /* Lines + greys */

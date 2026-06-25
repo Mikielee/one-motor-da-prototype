@@ -19,10 +19,10 @@ links, primary CTA), and a **blue** progress/selected accent on slate ink —
 |---|---|---|
 | `--da-yellow` | `#FCD900` | CTA zone + footer surface |
 | `--da-yellow-chip` | `rgba(254,236,128,0.5)` | "Car Insurance" header chip |
-| `--da-green` | `#75BB49` | Enabled primary CTA + selected state |
-| `--da-green-tint` | `#EEF6E9` | Selected card background tint |
+| `--da-green` | `#75BB49` | Enabled primary CTA |
 | `--da-red` | `#DC2B1E` | Logo, footer links, error |
-| `--da-blue` | `#457CBF` | Progress-bar active |
+| `--da-blue` | `#457CBF` | Progress-bar active + selected card state |
+| `--da-blue-tint` | `#EAF1FA` | Selected card background tint |
 | `--da-outline` | `#79747E` | Back-button outline |
 | `--da-ink` | `#333F48` | Primary text + headings (Carbon) |
 | `--da-card-line` | `#49454F` | Cover-card / control outline |
@@ -41,9 +41,8 @@ The sticky CTA bar (Figma QuoteFooter / Main Button): yellow zone, rounded-top
 `#E8E8E8` + `#979797`. **Back** button = yellow fill + `#79747E` outline + soft
 shadow. All buttons 47px tall, 8px radius, shadow `0 4px 4px rgba(0,0,0,.25)`.
 
-> The **selected card** state is set to the same green (`#75BB49`), matching
-> BD's documented "selected = green" pattern, pending an explicit DA
-> selected-state Figma frame.
+> **Selected/active state = blue `#457CBF`** (border + radio + light blue tint),
+> confirmed by Mikie. Green `#75BB49` is the enabled CTA only.
 
 ## DA page sequence (price last)
 

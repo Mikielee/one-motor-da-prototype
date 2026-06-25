@@ -105,19 +105,17 @@ function select(value) {
   .cover-card:hover { border-color: var(--da-ink); }
 }
 
-/* Focus — visible green outline for keyboard users (OMP-6 AC 3). */
+/* Focus — visible blue outline for keyboard users (OMP-6 AC 3). */
 .cover-card:focus-visible {
-  outline: 2px solid var(--da-green);
+  outline: 2px solid var(--da-blue);
   outline-offset: 2px;
 }
 
-/* Selected — green radio + green outline + light green tint (OMP-6 AC 4).
-   Uses the DA affirmative green (same as the enabled CTA #75BB49), matching
-   BD's documented "selected = green" pattern. Still pending an explicit
-   selected-state Figma frame. */
+/* Selected — blue radio + blue outline + light blue tint (OMP-6 AC 4).
+   DA uses the blue accent for the selected/active card state. */
 .cover-card.is-selected {
-  border-color: var(--da-green);
-  background: var(--da-green-tint);
+  border-color: var(--da-blue);
+  background: var(--da-blue-tint);
 }
 
 /* Error — red outline on every card until one is picked (OMP-6 AC 5). */
@@ -137,13 +135,13 @@ function select(value) {
   justify-content: center;
 }
 .cover-radio.is-on {
-  border-color: var(--da-green);
+  border-color: var(--da-blue);
 }
 .cover-radio-dot {
   width: 10.66px;
   height: 10.66px;
   border-radius: 50%;
-  background: var(--da-green);
+  background: var(--da-blue);
 }
 
 .cover-text { display: flex; flex-direction: column; gap: 4px; }
