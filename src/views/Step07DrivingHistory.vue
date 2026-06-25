@@ -1,192 +1,242 @@
 <script setup>
-import { computed, reactive } from 'vue'
-import Select from 'primevue/select'
+import { computed, ref } from 'vue'
+import { useRouter } from 'vue-router'
+import DaSearchSelect from '../components/DaSearchSelect.vue'
 import StickyNext from '../components/StickyNext.vue'
+import FieldError from '../components/FieldError.vue'
 import { useQuote } from '../store/quote'
+import { useValidation } from '../composables/useValidation'
 
 const { quote, mutable } = useQuote()
+const { showErrors, reveal } = useValidation()
+const router = useRouter()
+const dh = computed(() => quote.drivingHistory)
 
-const yearsOptions = Array.from({ length: 41 }, (_, i) => ({
-  label: i === 0 ? 'Less than 1 year' : `${i} year${i === 1 ? '' : 's'}`,
-  value: i,
-}))
-
-const ncdOptions = [
-  { label: '0%', value: 0 },
-  { label: '10%', value: 10 },
-  { label: '20%', value: 20 },
-  { label: '30%', value: 30 },
-  { label: '40%', value: 40 },
-  { label: '50%', value: 50 },
+// --- Options ---
+const yearsOptions = [
+  { label: 'Less than 1 year', value: '<1' },
+  { label: '1 year', value: '1' },
+  { label: '2 years', value: '2' },
+  { label: '3 years', value: '3' },
+  { label: '4 years', value: '4' },
+  { label: '5 years', value: '5' },
+  { label: '6 to 10 years', value: '6-10' },
+  { label: 'More than 10 years', value: '>10' },
+]
+const afOptions = ['0', '1', '2', '3', '4+']
+const nafOptions = ['0', '1', '2', '3', '4', '5+']
+// DA includes the 60% tier (KB #6); BD stops at 50%.
+const ncdOptions = ['0', '10', '20', '30', '40', '50', '60'].map((n) => ({ label: `${n}%`, value: n }))
+const zeroReasonOptions = [
+  { label: 'New driver', value: 'new-driver' },
+  { label: 'No previous insurance', value: 'no-prev-insurance' },
+  { label: 'Claims in past year', value: 'claims-past-year' },
+  { label: 'I have NCD on another car', value: 'other-car' },
+]
+const otherCarNcdOptions = ['0', '10', '20', '30', '40', '50'].map((n) => ({ label: `${n}%`, value: n }))
+const transferFromOptions = [
+  { label: 'Current insurer', value: 'current' },
+  { label: 'Previous insurer', value: 'previous' },
+]
+const ncd60YearsOptions = [
+  { label: '1 year', value: '1' },
+  { label: '2 years', value: '2' },
+  { label: '3 years', value: '3' },
+  { label: '4 years', value: '4' },
+  { label: '5 or more years', value: '5+' },
 ]
 
-// DA-only: customers at 50% NCD are asked how long they've held it. Holding
-// 50% for long enough qualifies for NCD60 (NCD protector). DirectAsia only.
-const ncd60Options = [
-  { label: 'Less than 3 years', value: 'under-3' },
-  { label: '3 to 5 years', value: '3-5' },
-  { label: '6 years or more', value: '6-plus' },
-]
-
-const atFaultOptions = [
-  { label: '0', value: 0 },
-  { label: '1', value: 1 },
-  { label: '2', value: 2 },
-  { label: '3+', value: 3 },
-]
-
-const notAtFaultOptions = [
-  { label: '0', value: 0 },
-  { label: '1', value: 1 },
-  { label: '2', value: 2 },
-  { label: '3', value: 3 },
-  { label: '4+', value: 4 },
-]
-
-const local = reactive({
-  yearsLicensed: quote.drivingHistory?.yearsLicensed ?? null,
-  atFault: quote.drivingHistory?.atFaultClaims ?? null,
-  notAtFault: quote.drivingHistory?.notAtFaultClaims ?? null,
-  certOfMerit: quote.drivingHistory?.certificateOfMerit ?? null,
-  ncd: quote.drivingHistory?.ncd ?? null,
-  ncd60: quote.drivingHistory?.ncd60 ?? null,
+// --- Dropdown v-models (with cascade clearing) ---
+const years = computed({
+  get: () => dh.value.yearsLicensed,
+  set: (v) => { mutable.drivingHistory.yearsLicensed = v },
+})
+const ncd = computed({
+  get: () => dh.value.ncd,
+  set: (v) => {
+    mutable.drivingHistory.ncd = v
+    if (v !== '0') {
+      mutable.drivingHistory.ncdZeroReason = null
+      mutable.drivingHistory.otherCarNcd = null
+      mutable.drivingHistory.ncdTransferFrom = null
+    }
+    if (v !== '50') mutable.drivingHistory.ncd60Years = null // DA NCD60 follow-up
+  },
+})
+const zeroReason = computed({
+  get: () => dh.value.ncdZeroReason,
+  set: (v) => {
+    mutable.drivingHistory.ncdZeroReason = v
+    if (v !== 'other-car') {
+      mutable.drivingHistory.otherCarNcd = null
+      mutable.drivingHistory.ncdTransferFrom = null
+    }
+  },
+})
+const otherCarNcd = computed({
+  get: () => dh.value.otherCarNcd,
+  set: (v) => { mutable.drivingHistory.otherCarNcd = v },
+})
+const transferFrom = computed({
+  get: () => dh.value.ncdTransferFrom,
+  set: (v) => { mutable.drivingHistory.ncdTransferFrom = v },
+})
+const ncd60Years = computed({
+  get: () => dh.value.ncd60Years,
+  set: (v) => { mutable.drivingHistory.ncd60Years = v },
 })
 
-function sync() {
-  mutable.drivingHistory = {
-    ...quote.drivingHistory,
-    yearsLicensed: local.yearsLicensed,
-    atFaultClaims: local.atFault,
-    notAtFaultClaims: local.notAtFault,
-    certificateOfMerit: local.certOfMerit,
-    ncd: local.ncd,
-    ncd60: local.ncd60,
+function setAf(v) { mutable.drivingHistory.atFaultClaims = v }
+function setNaf(v) { mutable.drivingHistory.notAtFaultClaims = v }
+function setCom(v) { mutable.drivingHistory.certificateOfMerit = v }
+
+// --- Conditional reveals ---
+const showZeroReason = computed(() => dh.value.ncd === '0')
+const showOtherCar = computed(() => dh.value.ncd === '0' && dh.value.ncdZeroReason === 'other-car')
+const showNcd60 = computed(() => dh.value.ncd === '50') // DA-only
+
+// --- Validation ---
+const ncdOk = computed(() => {
+  if (dh.value.ncd === '0') {
+    if (!dh.value.ncdZeroReason) return false
+    if (dh.value.ncdZeroReason === 'other-car') return Boolean(dh.value.otherCarNcd && dh.value.ncdTransferFrom)
+    return true
   }
-}
-
-function setAtFault(v) { local.atFault = v; sync() }
-function setNotAtFault(v) { local.notAtFault = v; sync() }
-function setCertOfMerit(v) { local.certOfMerit = v; sync() }
-function onYearsChange(v) { local.yearsLicensed = v; sync() }
-function onNcdChange(v) {
-  local.ncd = v
-  if (v !== 50) local.ncd60 = null   // NCD60 only applies at 50% NCD
-  sync()
-}
-function onNcd60Change(v) { local.ncd60 = v; sync() }
-
+  if (dh.value.ncd === '50') return Boolean(dh.value.ncd60Years)
+  return true
+})
 const canContinue = computed(() =>
-  local.yearsLicensed !== null
-  && local.atFault !== null
-  && local.notAtFault !== null
-  && local.certOfMerit !== null
-  && local.ncd !== null
-  && (local.ncd !== 50 || local.ncd60 !== null)
+  Boolean(dh.value.yearsLicensed) &&
+  Boolean(dh.value.atFaultClaims) &&
+  Boolean(dh.value.notAtFaultClaims) &&
+  dh.value.certificateOfMerit !== null &&
+  Boolean(dh.value.ncd) &&
+  ncdOk.value
 )
+
+const yearsError = computed(() => showErrors.value && !dh.value.yearsLicensed)
+const afError = computed(() => showErrors.value && !dh.value.atFaultClaims)
+const nafError = computed(() => showErrors.value && !dh.value.notAtFaultClaims)
+const comError = computed(() => showErrors.value && dh.value.certificateOfMerit === null)
+const ncdError = computed(() => showErrors.value && !dh.value.ncd)
+const zeroReasonError = computed(() => showErrors.value && showZeroReason.value && !dh.value.ncdZeroReason)
+const otherCarError = computed(() => showErrors.value && showOtherCar.value && !dh.value.otherCarNcd)
+const transferError = computed(() => showErrors.value && showOtherCar.value && !dh.value.ncdTransferFrom)
+const ncd60Error = computed(() => showErrors.value && showNcd60.value && !dh.value.ncd60Years)
+
+// --- UW reject (front-end gate): at-fault 4+ or not-at-fault 5+ ---
+const rejected = ref(false)
+function onNext() {
+  if (dh.value.atFaultClaims === '4+' || dh.value.notAtFaultClaims === '5+') {
+    rejected.value = true
+    window.scrollTo(0, 0)
+    return
+  }
+  router.push('/step/8')
+}
 </script>
 
 <template>
-  <section class="step">
-    <h1 class="da-section-title">Your driving history</h1>
-
-    <div class="field">
-      <label class="field-label">Years of valid driving licence</label>
-      <Select
-        :model-value="local.yearsLicensed"
-        @update:model-value="onYearsChange"
-        :options="yearsOptions"
-        option-label="label"
-        option-value="value"
-        placeholder=" "
-        class="da-select"
-        fluid
-      />
-    </div>
-
-    <p class="prefix">
-      In the 3 years prior to the start of the policy, all drivers to be insured had the following:
-    </p>
-
-    <div class="field">
-      <p class="field-label">
-        Total number of <strong>at-fault</strong> accidents and/or claims
+  <!-- UW reject screen -->
+  <section v-if="rejected" class="step reject-step">
+    <div class="reject">
+      <h1 class="da-section-title">We can’t insure you online</h1>
+      <p class="reject-body">
+        Based on the driving history you entered, we’re not able to offer a quote online right now.
+        Please call our team and we’ll take it from here.
       </p>
-      <div class="chip-row">
-        <button
-          v-for="o in atFaultOptions"
-          :key="o.value"
-          type="button"
-          class="chip"
-          :class="{ 'is-selected': local.atFault === o.value }"
-          @click="setAtFault(o.value)"
-        >{{ o.label }}</button>
+      <a class="reject-call" href="tel:+6562218688">Call us: +65 6221 8688</a>
+      <button type="button" class="reject-back" @click="rejected = false">Back to driving history</button>
+    </div>
+  </section>
+
+  <!-- Form -->
+  <section v-else class="step">
+    <h1 class="da-section-title">Main driver</h1>
+
+    <div class="dh-form">
+      <!-- Years of valid driving licence -->
+      <div class="field" :data-error="yearsError ? 'true' : null">
+        <p class="field-label">Years of valid driving licence</p>
+        <DaSearchSelect v-model="years" :options="yearsOptions" placeholder="Select"
+          field-outline="#CCCCCC" :invalid="yearsError" />
+        <FieldError :show="yearsError" message="Select your years of driving licence." />
+      </div>
+
+      <!-- At-fault -->
+      <div class="field" :data-error="afError ? 'true' : null">
+        <p class="q-label">Total number of <strong>at-fault</strong> accidents and/or claims in the past 3 years</p>
+        <div class="chips" :class="{ 'is-error': afError }" role="radiogroup" aria-label="At-fault claims">
+          <button v-for="o in afOptions" :key="o" type="button" class="chip" role="radio"
+            :aria-checked="dh.atFaultClaims === o" :class="{ 'is-on': dh.atFaultClaims === o }"
+            @click="setAf(o)">{{ o }}</button>
+        </div>
+        <FieldError :show="afError" message="Select your at-fault claims." />
+      </div>
+
+      <!-- Not-at-fault -->
+      <div class="field" :data-error="nafError ? 'true' : null">
+        <p class="q-label">Total number of <strong>not-at-fault</strong> accidents and/or claims in the past 3 years</p>
+        <div class="chips" :class="{ 'is-error': nafError }" role="radiogroup" aria-label="Not-at-fault claims">
+          <button v-for="o in nafOptions" :key="o" type="button" class="chip" role="radio"
+            :aria-checked="dh.notAtFaultClaims === o" :class="{ 'is-on': dh.notAtFaultClaims === o }"
+            @click="setNaf(o)">{{ o }}</button>
+        </div>
+        <FieldError :show="nafError" message="Select your not-at-fault claims." />
+      </div>
+
+      <!-- Certificate of Merit -->
+      <div class="field" :data-error="comError ? 'true' : null">
+        <p class="field-label">Entitled to Certificate of Merit?</p>
+        <div class="chips" :class="{ 'is-error': comError }" role="radiogroup" aria-label="Certificate of Merit">
+          <button type="button" class="chip" role="radio" :aria-checked="dh.certificateOfMerit === true"
+            :class="{ 'is-on': dh.certificateOfMerit === true }" @click="setCom(true)">Yes</button>
+          <button type="button" class="chip" role="radio" :aria-checked="dh.certificateOfMerit === false"
+            :class="{ 'is-on': dh.certificateOfMerit === false }" @click="setCom(false)">No</button>
+        </div>
+        <FieldError :show="comError" message="Tell us if you’re entitled to a Certificate of Merit." />
+      </div>
+
+      <!-- NCD -->
+      <div class="field" :data-error="ncdError ? 'true' : null">
+        <p class="field-label">No Claim Discount (NCD) at renewal</p>
+        <DaSearchSelect v-model="ncd" :options="ncdOptions" placeholder="Select"
+          field-outline="#CCCCCC" :invalid="ncdError" />
+        <FieldError :show="ncdError" message="Select the policyholder’s NCD." />
+      </div>
+
+      <!-- NCD = 0% cascade -->
+      <div v-if="showZeroReason" class="field" :data-error="zeroReasonError ? 'true' : null">
+        <p class="field-label">NCD is 0% because</p>
+        <DaSearchSelect v-model="zeroReason" :options="zeroReasonOptions" placeholder="Select"
+          field-outline="#CCCCCC" :invalid="zeroReasonError" />
+        <FieldError :show="zeroReasonError" message="Tell us why the NCD is 0%." />
+      </div>
+      <template v-if="showOtherCar">
+        <div class="field" :data-error="otherCarError ? 'true' : null">
+          <p class="field-label">What is your NCD on the other car?</p>
+          <DaSearchSelect v-model="otherCarNcd" :options="otherCarNcdOptions" placeholder="Select"
+            field-outline="#CCCCCC" :invalid="otherCarError" />
+          <FieldError :show="otherCarError" message="Select the NCD on the other car." />
+        </div>
+        <div class="field" :data-error="transferError ? 'true' : null">
+          <p class="field-label">NCD transferred from</p>
+          <DaSearchSelect v-model="transferFrom" :options="transferFromOptions" placeholder="Select"
+            field-outline="#CCCCCC" :invalid="transferError" />
+          <FieldError :show="transferError" message="Select where the NCD is transferred from." />
+        </div>
+      </template>
+
+      <!-- DA-only NCD60 follow-up (NCD = 50%) -->
+      <div v-if="showNcd60" class="field" :data-error="ncd60Error ? 'true' : null">
+        <p class="field-label">How many years has the vehicle held 50% NCD?</p>
+        <DaSearchSelect v-model="ncd60Years" :options="ncd60YearsOptions" placeholder="Select"
+          field-outline="#CCCCCC" :invalid="ncd60Error" />
+        <FieldError :show="ncd60Error" message="Select how long the vehicle has held 50% NCD." />
       </div>
     </div>
 
-    <div class="field">
-      <p class="field-label">
-        Total number of <strong>not-at-fault</strong> accidents and/or claims
-      </p>
-      <div class="chip-row">
-        <button
-          v-for="o in notAtFaultOptions"
-          :key="o.value"
-          type="button"
-          class="chip"
-          :class="{ 'is-selected': local.notAtFault === o.value }"
-          @click="setNotAtFault(o.value)"
-        >{{ o.label }}</button>
-      </div>
-    </div>
-
-    <div class="field">
-      <p class="field-label">Entitled to Certificate of Merit?</p>
-      <div class="yes-no">
-        <button
-          type="button"
-          class="yn-button"
-          :class="{ 'is-selected': local.certOfMerit === true }"
-          @click="setCertOfMerit(true)"
-        >Yes</button>
-        <button
-          type="button"
-          class="yn-button"
-          :class="{ 'is-selected': local.certOfMerit === false }"
-          @click="setCertOfMerit(false)"
-        >No</button>
-      </div>
-    </div>
-
-    <div class="field">
-      <label class="field-label">No Claim Discount (NCD) at renewal</label>
-      <Select
-        :model-value="local.ncd"
-        @update:model-value="onNcdChange"
-        :options="ncdOptions"
-        option-label="label"
-        option-value="value"
-        placeholder=" "
-        class="da-select"
-        fluid
-      />
-    </div>
-
-    <div v-if="local.ncd === 50" class="field">
-      <label class="field-label">How long have you held 50% NCD?</label>
-      <p class="ncd60-hint">Holding 50% NCD may qualify you for added NCD protection.</p>
-      <Select
-        :model-value="local.ncd60"
-        @update:model-value="onNcd60Change"
-        :options="ncd60Options"
-        option-label="label"
-        option-value="value"
-        placeholder=" "
-        class="da-select"
-        fluid
-      />
-    </div>
-
-    <StickyNext :disabled="!canContinue" />
+    <StickyNext :disabled="!canContinue" intercept-next @next="onNext" @blocked="reveal" />
   </section>
 </template>
 
@@ -195,79 +245,82 @@ const canContinue = computed(() =>
   padding-top: 24px;
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 16px;
 }
 
+.dh-form { display: flex; flex-direction: column; gap: 16px; }
 .field { display: flex; flex-direction: column; gap: 8px; }
 
 .field-label {
   margin: 0;
+  font-family: var(--da-font);
   font-size: 16px;
-  font-weight: 500;
-  color: var(--da-carbon);
-  line-height: 1.4;
+  font-weight: 600;
+  line-height: 20px;
+  color: #252525;
 }
-.field-label strong { font-weight: 900; }
-
-.prefix {
+/* at-fault / not-at-fault labels — bold emphasis on the key phrase. */
+.q-label {
   margin: 0;
+  font-family: var(--da-font);
   font-size: 16px;
   font-weight: 500;
-  color: var(--da-carbon);
-  line-height: 1.4;
+  line-height: 23px;
+  color: var(--da-ink);
 }
+.q-label strong { font-weight: 800; }
 
-.ncd60-hint {
-  margin: 0 0 4px 0;
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--da-grey-600);
-  line-height: 1.4;
-}
-
-.chip-row {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-}
+/* Segmented chip rows (at-fault, not-at-fault, COM). */
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
 .chip {
   flex: 1 1 0;
   min-width: 0;
+  height: 56px;
+  padding: 12px 8px;
   background: #fff;
-  border: 1px solid var(--da-grey-300);
-  border-radius: var(--da-radius-card);
-  padding: 16px;
-  min-height: 56px;
+  border: 1px solid #CCCCCC;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-family: var(--da-font);
   font-size: 16px;
-  font-weight: 700;
-  color: var(--da-carbon);
+  font-weight: 500;
+  color: #49454F;
   text-align: center;
-  cursor: pointer;
-  font-family: var(--da-font);
 }
-.chip.is-selected {
-  border-color: var(--da-green);
-  box-shadow: 0 0 0 1px var(--da-green) inset;
-}
+.chip.is-on { background: var(--da-blue); color: #fff; }
+.chips.is-error .chip { border-color: var(--da-error); }
 
-.yes-no { display: flex; gap: 8px; }
-.yn-button {
-  flex: 1;
-  background: #fff;
-  border: 1px solid var(--da-grey-300);
-  border-radius: var(--da-radius-card);
-  padding: 16px;
-  min-height: 56px;
+/* UW reject screen. */
+.reject-step { justify-content: flex-start; }
+.reject { display: flex; flex-direction: column; gap: 16px; padding-top: 8px; }
+.reject-body {
+  margin: 0;
+  font-family: var(--da-font);
   font-size: 16px;
-  font-weight: 700;
-  color: var(--da-carbon);
-  cursor: pointer;
+  font-weight: 500;
+  line-height: 23px;
+  color: var(--da-ink);
+}
+.reject-call {
   font-family: var(--da-font);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--da-red);
+  text-decoration: none;
 }
-.yn-button.is-selected {
-  border-color: var(--da-green);
-  box-shadow: 0 0 0 1px var(--da-green) inset;
+.reject-back {
+  align-self: flex-start;
+  background: #fff;
+  border: 1px solid var(--da-ink);
+  border-radius: var(--da-radius-card);
+  padding: 10px 16px;
+  font-family: var(--da-font);
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--da-ink);
+  cursor: pointer;
 }
-
-/* Field styling comes from global style.css — no Select overrides needed. */
 </style>

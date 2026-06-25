@@ -25,7 +25,10 @@ const state = reactive({
     notAtFaultClaims: null,
     certificateOfMerit: null,
     ncd: null,
-    ncd60: null,          // DA-only: years held at 50% NCD (qualifies for NCD60)
+    ncd60Years: null,        // DA-only: years held at 50% NCD (drives NCD60 eligibility)
+    ncdZeroReason: null,     // shown when NCD = 0%
+    otherCarNcd: null,       // shown when reason = "I have NCD on another car"
+    ncdTransferFrom: null,   // ditto
     claims: null,
     convictions: null,
   },

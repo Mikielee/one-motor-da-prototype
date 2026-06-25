@@ -13,11 +13,14 @@ const props = defineProps({
   // year": DA cover term flexes 7–18 months (KB f1898394 / 38971919), so a
   // yearly framing is inaccurate and exposes us to MAS premium-display rules.
   priceUnit: { type: String, default: 'Total' },
+  // When true, a valid Next click emits `next` instead of routing — let the
+  // parent decide where to go (e.g. a UW-reject branch).
+  interceptNext: { type: Boolean, default: false },
 })
 
-// `blocked` fires when the user clicks Next while the step is still invalid, so
-// the parent can reveal its field errors.
-const emit = defineEmits(['blocked'])
+// `blocked` fires when the user clicks Next while the step is still invalid;
+// `next` fires when the parent opted into intercept and the click was valid.
+const emit = defineEmits(['blocked', 'next'])
 
 const router = useRouter()
 const route = useRoute()
@@ -30,6 +33,10 @@ function onNext() {
   // the errors instead of navigating.
   if (props.disabled) {
     emit('blocked')
+    return
+  }
+  if (props.interceptNext) {
+    emit('next')
     return
   }
   if (props.to !== null) {
