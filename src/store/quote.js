@@ -45,8 +45,10 @@ const state = reactive({
     excess: 600,
     promoCode: '',
   },
-  hasAdditionalDrivers: null,
-  hasOutsideDrivers: null,
+  hasAdditionalDrivers: null,  // Q1: anyone else in the household drives the car
+  hasUnder30Drivers: null,     // Q2: any household drivers under 30 (only asked when Q1 = Yes)
+  hasOutsideDrivers: null,     // Q3: anyone outside the household drives the car
+  // Each entry: { name, nric, dob: Date, gender, maritalStatus, yearsLicensed, atFault, notAtFault }
   additionalDrivers: [],
   driveLess: null,           // DA-only: opted in to Drive Less, Pay Less (true/false)
   odometerReading: null,     // DA-only: required when Drive Less is opted in
