@@ -14,6 +14,7 @@ defineProps({
   inputmode: { type: String, default: undefined },
   autocomplete: { type: String, default: 'off' },
   invalid: { type: Boolean, default: false },
+  disabled: { type: Boolean, default: false },
   id: { type: String, default: undefined },
 })
 defineEmits(['update:modelValue'])
@@ -24,7 +25,7 @@ const focused = ref(false)
 <template>
   <div
     class="da-fi"
-    :class="{ 'is-focus': focused, 'is-filled': !!modelValue, 'is-invalid': invalid }"
+    :class="{ 'is-focus': focused, 'is-filled': !!modelValue, 'is-invalid': invalid, 'is-disabled': disabled }"
   >
     <input
       :id="id"
@@ -33,6 +34,7 @@ const focused = ref(false)
       :inputmode="inputmode"
       :autocomplete="autocomplete"
       :value="modelValue"
+      :disabled="disabled"
       @input="$emit('update:modelValue', $event.target.value)"
       @focus="focused = true"
       @blur="focused = false"
@@ -51,6 +53,8 @@ const focused = ref(false)
   transition: border-color 100ms ease;
 }
 .da-fi.is-filled:not(.is-focus) { border-color: var(--da-blue); }
+.da-fi.is-disabled { background: #E8E8E8; border-color: #D1CDD4; }
+.da-fi.is-disabled .da-fi-input { color: #49454F; cursor: not-allowed; }
 .da-fi.is-focus { border: 2px solid var(--da-blue); }
 .da-fi.is-invalid { border-color: var(--da-error); }
 

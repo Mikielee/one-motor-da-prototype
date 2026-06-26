@@ -80,6 +80,12 @@ const routes = [
     component: () => import('../views/Step12FinalisePay.vue'),
     meta: { step: 12, group: 3, omp: 'OMP-95', title: 'Finalise & Pay' },
   },
+  {
+    path: '/step/13',
+    name: 'step-13-vehicle-details',
+    component: () => import('../views/Step13VehicleDetails.vue'),
+    meta: { step: 13, group: 3, omp: 'OMP-95', title: 'Vehicle Details' },
+  },
   { path: '/:pathMatch(.*)*', redirect: '/step/1' },
 ]
 

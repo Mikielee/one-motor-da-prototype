@@ -86,9 +86,8 @@ const postalError = computed(() => showErrors.value && !validPostal.value)
 
 function onBack() { router.push('/step/11') }
 function onNext() {
-  // Last step of the prototype — payment is out of scope. A click while invalid
-  // reveals the errors; a valid click currently goes nowhere.
   if (!canContinue.value) { reveal(); return }
+  router.push('/step/13')
 }
 </script>
 

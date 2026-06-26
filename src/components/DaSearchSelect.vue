@@ -19,6 +19,9 @@ const props = defineProps({
   grouped: { type: Boolean, default: false },
   searchable: { type: Boolean, default: false },
   placeholder: { type: String, default: 'Select' },
+  // Optional floating notch label (verified-dropdown style). When set and a value
+  // is selected, the label floats onto the top outline and the field turns blue.
+  label: { type: String, default: '' },
   disabled: { type: Boolean, default: false },
   invalid: { type: Boolean, default: false },
   // Resting field outline colour (Material steps use #79747E; some forms #CCCCCC).
@@ -73,10 +76,11 @@ onBeforeUnmount(() => { document.body.style.overflow = '' })
 <template>
   <div
     class="da-ss"
-    :class="{ 'is-open': open, 'is-disabled': disabled, 'is-invalid': invalid }"
+    :class="{ 'is-open': open, 'is-disabled': disabled, 'is-invalid': invalid, 'is-filled': !!selectedLabel, 'has-label': !!label }"
     :style="{ '--ss-outline': fieldOutline }"
   >
     <button type="button" class="da-ss-field" :disabled="disabled" @click="openSheet">
+      <span v-if="label && selectedLabel" class="da-ss-flabel">{{ label }}</span>
       <span class="da-ss-value" :class="{ 'is-placeholder': !selectedLabel }">
         {{ selectedLabel || placeholder }}
       </span>
@@ -171,6 +175,22 @@ onBeforeUnmount(() => { document.body.style.overflow = '' })
   justify-content: center;
   color: #49454F;
   transition: transform 160ms ease;
+}
+
+/* Verified floating label (when `label` set and a value is chosen). */
+.da-ss.has-label.is-filled .da-ss-field { border-color: var(--da-blue); }
+.da-ss-flabel {
+  position: absolute;
+  left: 12px;
+  top: -8px;
+  padding: 0 4px;
+  background: #fff;
+  font-family: var(--da-font);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 16px;
+  color: #49454F;
+  pointer-events: none;
 }
 
 .da-ss.is-open .da-ss-field { border: 2px solid #2196F3; padding-left: 19px; }
