@@ -197,8 +197,24 @@ function fmtDob(d) {
 }
 
 // Demo autofill — header "Car Insurance" chip.
+// Household = Yes, with one under-30 named driver; outside household = Yes.
 import { useDemoAutofill } from '../composables/useDemoAutofill'
-useDemoAutofill().register(() => { setHousehold(false); setOutside(false) })
+useDemoAutofill().register(() => {
+  setHousehold(true)
+  setUnder30(true) // opens a fresh capture form
+  Object.assign(draft, {
+    name: 'Jane Roe',
+    nric: 'T0067890A',
+    dob: new Date(2000, 2, 20),
+    gender: 'female',
+    maritalStatus: 'single',
+    yearsLicensed: '3',
+    atFault: '0',
+    notAtFault: '0',
+  })
+  saveDriver()
+  setOutside(true)
+})
 </script>
 
 <template>
