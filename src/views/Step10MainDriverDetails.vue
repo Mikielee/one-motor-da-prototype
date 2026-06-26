@@ -69,6 +69,10 @@ const yearsError = computed(() => showErrors.value && !dh.value.yearsLicensed)
 const afError = computed(() => showErrors.value && !dh.value.atFaultClaims)
 const nafError = computed(() => showErrors.value && !dh.value.notAtFaultClaims)
 const comError = computed(() => showErrors.value && dh.value.certificateOfMerit === null)
+
+// Demo autofill — header "Car Insurance" chip.
+import { useDemoAutofill } from '../composables/useDemoAutofill'
+useDemoAutofill().register(() => { const m = mutable.mainDriver; m.name = 'Mikie Lee'; m.nric = 'S1234567A'; m.dob = new Date(1990, 0, 1); m.gender = 'male'; m.maritalStatus = 'single'; const d = mutable.drivingHistory; d.yearsLicensed = '5'; d.atFaultClaims = '0'; d.notAtFaultClaims = '0'; d.certificateOfMerit = false })
 </script>
 
 <template>

@@ -33,6 +33,10 @@ function pickDriveLess(v) {
 const canContinue = computed(() =>
   Boolean(quote.annualDistance) && (!eligible.value || quote.driveLess !== null)
 )
+
+// Demo autofill — header "Car Insurance" chip.
+import { useDemoAutofill } from '../composables/useDemoAutofill'
+useDemoAutofill().register(() => { mutable.annualDistance = 'less-8000'; mutable.driveLessEligible = true; mutable.driveLess = true; mutable.odometerReading = 7500 })
 </script>
 
 <template>

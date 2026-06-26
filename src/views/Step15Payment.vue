@@ -39,6 +39,10 @@ function onPay() {
   // End of the prototype — the real flow hands off to the secure payment gateway.
   if (!canPay.value) return
 }
+
+// Demo autofill — header "Car Insurance" chip.
+import { useDemoAutofill } from '../composables/useDemoAutofill'
+useDemoAutofill().register(() => { mutable.paymentOption = 'single'; mutable.paymentMethod = 'card' })
 </script>
 
 <template>

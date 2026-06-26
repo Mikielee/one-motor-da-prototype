@@ -91,6 +91,10 @@ const canContinue = computed(() => Boolean(quote.carYear && quote.carMake && quo
 const yearError = computed(() => showErrors.value && !quote.carYear)
 const makeError = computed(() => showErrors.value && quote.carYear && !quote.carMake)
 const modelError = computed(() => showErrors.value && quote.carYear && quote.carMake && !quote.carModel)
+
+// Demo autofill — header "Car Insurance" chip.
+import { useDemoAutofill } from '../composables/useDemoAutofill'
+useDemoAutofill().register(() => { mutable.carYear = 2025; mutable.carMake = 'Toyota'; mutable.carModel = 'RAV4' })
 </script>
 
 <template>

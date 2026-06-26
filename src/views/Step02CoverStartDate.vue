@@ -49,6 +49,10 @@ const minStart = new Date() // past dates not selectable
 
 // Next is disabled (not blocked) until both dates are set — no error message (OMP-88 AC).
 const canContinue = computed(() => Boolean(quote.coverStartDate && quote.coverEndDate))
+
+// Demo autofill — header "Car Insurance" chip.
+import { useDemoAutofill } from '../composables/useDemoAutofill'
+useDemoAutofill().register(() => { const s = new Date(); s.setHours(0,0,0,0); const e = new Date(s); e.setFullYear(e.getFullYear() + 1); e.setDate(e.getDate() - 1); mutable.coverStartDate = s; mutable.coverEndDate = e })
 </script>
 
 <template>

@@ -195,6 +195,10 @@ function fmtDob(d) {
   const p = (n) => String(n).padStart(2, '0')
   return `${p(x.getDate())}/${p(x.getMonth() + 1)}/${x.getFullYear()}`
 }
+
+// Demo autofill — header "Car Insurance" chip.
+import { useDemoAutofill } from '../composables/useDemoAutofill'
+useDemoAutofill().register(() => { setHousehold(false); setOutside(false) })
 </script>
 
 <template>

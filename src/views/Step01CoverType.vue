@@ -33,6 +33,10 @@ const hasError = computed(() => showErrors.value && !canContinue.value)
 function select(value) {
   mutable.coverType = value
 }
+
+// Demo autofill — header "Car Insurance" chip.
+import { useDemoAutofill } from '../composables/useDemoAutofill'
+useDemoAutofill().register(() => { mutable.coverType = 'comprehensive' })
 </script>
 
 <template>

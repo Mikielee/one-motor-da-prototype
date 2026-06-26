@@ -89,6 +89,10 @@ function onNext() {
   if (!canContinue.value) { reveal(); return }
   router.push('/step/13')
 }
+
+// Demo autofill — header "Car Insurance" chip.
+import { useDemoAutofill } from '../composables/useDemoAutofill'
+useDemoAutofill().register(() => { const m = mutable.mainDriver; m.name = 'Mikie Lee'; m.nric = 'S1234567A'; m.dob = new Date(1990, 0, 1); m.gender = 'male'; mutable.contact.email = 'user@mail.com'; mutable.contact.phone = '91234567'; mutable.contact.postalCode = '238859'; mutable.drivingHistory.ncd = '50' })
 </script>
 
 <template>

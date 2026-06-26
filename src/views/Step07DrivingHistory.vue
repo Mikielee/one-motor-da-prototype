@@ -134,6 +134,10 @@ function onNext() {
   }
   router.push('/step/8')
 }
+
+// Demo autofill — header "Car Insurance" chip.
+import { useDemoAutofill } from '../composables/useDemoAutofill'
+useDemoAutofill().register(() => { const d = mutable.drivingHistory; d.yearsLicensed = '5'; d.atFaultClaims = '0'; d.notAtFaultClaims = '0'; d.certificateOfMerit = false; d.ncd = '50'; d.ncd60Years = '5+' })
 </script>
 
 <template>

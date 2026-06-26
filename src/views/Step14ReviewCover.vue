@@ -195,6 +195,10 @@ function onNext() {
   if (!agreed.value) return
   router.push('/step/15')
 }
+
+// Demo autofill — header "Car Insurance" chip.
+import { useDemoAutofill } from '../composables/useDemoAutofill'
+useDemoAutofill().register(() => { agreed.value = true })
 </script>
 
 <template>

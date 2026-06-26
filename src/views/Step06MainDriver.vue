@@ -38,6 +38,10 @@ const canContinue = computed(() =>
   Boolean(md.value.maritalStatus) &&
   Boolean(md.value.dob)
 )
+
+// Demo autofill — header "Car Insurance" chip.
+import { useDemoAutofill } from '../composables/useDemoAutofill'
+useDemoAutofill().register(() => { mutable.mainDriver.isPolicyholder = true; mutable.mainDriver.gender = 'male'; mutable.mainDriver.maritalStatus = 'single'; mutable.mainDriver.dob = new Date(1990, 0, 1) })
 </script>
 
 <template>

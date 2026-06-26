@@ -58,6 +58,10 @@ function onNext() {
   loading.value = true
   window.setTimeout(() => router.push('/step/9'), 2500)
 }
+
+// Demo autofill — header "Car Insurance" chip.
+import { useDemoAutofill } from '../composables/useDemoAutofill'
+useDemoAutofill().register(() => { mutable.contact.preferredName = 'Mikie'; mutable.contact.email = 'user@mail.com'; mutable.contact.phone = '91234567'; mutable.contact.consentPdpa = true })
 </script>
 
 <template>

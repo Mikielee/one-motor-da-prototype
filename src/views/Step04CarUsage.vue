@@ -52,6 +52,10 @@ const canContinue = computed(() =>
 const q1Error = computed(() => showErrors.value && !form.usage)
 const q2Error = computed(() => showErrors.value && showQ2.value && !form.commute)
 const q3Error = computed(() => showErrors.value && showQ3.value && form.offPeak === null)
+
+// Demo autofill — header "Car Insurance" chip.
+import { useDemoAutofill } from '../composables/useDemoAutofill'
+useDemoAutofill().register(() => { form.usage = 'private-business'; form.commute = null; form.offPeak = false })
 </script>
 
 <template>

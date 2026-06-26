@@ -108,6 +108,10 @@ function onNext() {
   if (!canContinue.value) { reveal(); return }
   router.push('/step/14')
 }
+
+// Demo autofill — header "Car Insurance" chip.
+import { useDemoAutofill } from '../composables/useDemoAutofill'
+useDemoAutofill().register(() => { mutable.carMake = 'Toyota'; mutable.carModel = 'RAV4'; mutable.carYear = 2025; mutable.vehicleRegNo = 'SMP1234A'; mutable.vrnNotYet = false; mutable.odometerReading = 7500; mutable.currentInsurer = 'Income'; mutable.carFinancing = false })
 </script>
 
 <template>

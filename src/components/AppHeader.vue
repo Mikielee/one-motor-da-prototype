@@ -1,5 +1,10 @@
 <script setup>
 // da-logo.png lives in /public, so Vite serves it at the site root.
+// The "Car Insurance" chip doubles as a sprint-review demo trigger: clicking it
+// autofills the current step with consistent test data. See useDemoAutofill.js.
+import { useDemoAutofill } from '../composables/useDemoAutofill'
+
+const { trigger } = useDemoAutofill()
 </script>
 
 <template>
@@ -8,7 +13,7 @@
       <img src="/da-logo.png" alt="DirectAsia Insurance" class="da-logo-img" />
     </a>
     <div class="da-header-right">
-      <span class="da-product-chip">Car Insurance</span>
+      <button type="button" class="da-product-chip" title="Demo: autofill this page" @click="trigger">Car Insurance</button>
       <button class="da-menu" type="button" aria-label="Open menu">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
           <path d="M18.6087 7.06433H5.39132C4.48751 7.06433 3.75 6.40011 3.75 5.57147C3.75 4.74284 4.48751 4.07861 5.39132 4.07861H18.6087C19.5125 4.07861 20.25 4.74941 20.25 5.57147C20.25 6.39353 19.5125 7.06433 18.6087 7.06433Z" fill="#333F48"/>
@@ -56,12 +61,15 @@
   align-items: center;
   padding: 6px 12px;
   background: var(--da-yellow-chip);
+  border: 0;
   border-radius: var(--da-radius-card);
   color: #000;
+  font-family: var(--da-font);
   font-weight: 500;
   font-size: 14px;
   line-height: 1.4;
   white-space: nowrap;
+  cursor: pointer;
 }
 
 .da-menu {
