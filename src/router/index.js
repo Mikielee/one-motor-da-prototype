@@ -54,23 +54,25 @@ const routes = [
   // shown LAST, after the customer has personalised drivers and add-ons. So DA
   // orders these three as Additional Drivers -> Optional Benefits (upsell) ->
   // Your Quote, unlike BDI which reveals the price earlier. (One Motor PRD §6.2)
+  // Per Mikie: show the price right after contact (Step 9), then the upsell
+  // steps (Additional Drivers, Optional Benefits) follow.
   {
     path: '/step/9',
-    name: 'step-9-additional-drivers',
-    component: () => import('../views/Step10AdditionalDrivers.vue'),
-    meta: { step: 9, group: 2, omp: 'OMP-361', title: 'Additional Drivers' },
+    name: 'step-9-your-quote',
+    component: () => import('../views/Step09YourQuote.vue'),
+    meta: { step: 9, group: 2, omp: 'OMP-305', title: 'Your Quote' },
   },
   {
     path: '/step/10',
-    name: 'step-10-optional-benefits',
-    component: () => import('../views/Step11OptionalBenefits.vue'),
-    meta: { step: 10, group: 2, omp: 'OMP-362', title: 'Optional Benefits' },
+    name: 'step-10-additional-drivers',
+    component: () => import('../views/Step10AdditionalDrivers.vue'),
+    meta: { step: 10, group: 2, omp: 'OMP-361', title: 'Additional Drivers' },
   },
   {
     path: '/step/11',
-    name: 'step-11-your-quote',
-    component: () => import('../views/Step09YourQuote.vue'),
-    meta: { step: 11, group: 2, omp: 'OMP-305', title: 'Your Personalised Quote' },
+    name: 'step-11-optional-benefits',
+    component: () => import('../views/Step11OptionalBenefits.vue'),
+    meta: { step: 11, group: 2, omp: 'OMP-362', title: 'Optional Benefits' },
   },
   { path: '/:pathMatch(.*)*', redirect: '/step/1' },
 ]

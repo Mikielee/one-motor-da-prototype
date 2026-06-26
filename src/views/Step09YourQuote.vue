@@ -1,564 +1,458 @@
 <script setup>
-import { computed, reactive, ref } from 'vue'
-import InputText from 'primevue/inputtext'
-import StickyNext from '../components/StickyNext.vue'
+import { computed, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import { useQuote } from '../store/quote'
 
 const { quote, mutable } = useQuote()
+const router = useRouter()
 
-const local = reactive({
-  billingCycle: quote.quoteSelection?.billingCycle || 'annual',
-  excess: quote.quoteSelection?.excess ?? 600,
-  promoCode: quote.quoteSelection?.promoCode || '',
-  appliedPromo: null,
-  promoError: '',
-  coverageExpanded: false,
+// Billing term (KB f1898394: "Single" / "Instalment", Single pre-selected).
+const billing = ref(quote.quoteSelection.billingCycle === 'instalment' ? 'instalment' : 'single')
+function setBilling(v) {
+  billing.value = v
+  mutable.quoteSelection.billingCycle = v
+}
+// KB #38971919: never "per year". Single = "Total"; Instalment = "per month".
+const periodLabel = computed(() => (billing.value === 'single' ? 'Total' : 'per month'))
+
+// Static prototype figures (no live pricing engine).
+const headlinePrice = '$416.00'
+const breakdown = computed(() => {
+  const rows = [
+    { label: 'Subtotal', value: '$240.00' },
+    { label: 'Medical expenses', value: '$80.00' },
+    { label: 'GST (9%)', value: '$36.00' },
+  ]
+  if (quote.driveLess === true) rows.push({ label: 'Low mileage', value: '- $20.00', good: true })
+  if (billing.value === 'single') rows.push({ label: 'Single payment 3% discount', value: 'Included', good: true })
+  return rows
 })
 
-const basePrice = 1024.0
+// Cover + car summary.
+const coverLabel = computed(() => ({
+  comprehensive: 'Comprehensive Car Insurance',
+  'third-party-fire-theft': 'Third Party, Fire & Theft Car Insurance',
+  'third-party': 'Third Party Only Car Insurance',
+}[quote.coverType] || 'Comprehensive Car Insurance'))
+const carLabel = computed(() => {
+  const { carMake, carModel, carYear } = quote
+  return [carMake, carModel, carYear].filter(Boolean).join(' ') || 'Toyota Camry 2025'
+})
 
-// Excess → annual premium delta. $600 is default → no change.
-// All other values change the final annual premium.
+// Excess (KB #306cd369: top 6 options, default $600, signed delta, no /yr).
 const excessOptions = [
-  { value: 0,    label: '$0',     delta: 120,  kind: 'up'   },
-  { value: 500,  label: '$500',   delta: 30,   kind: 'up'   },
-  { value: 600,  label: '$600',   delta: 0,    kind: 'default' },
-  { value: 800,  label: '$800',   delta: -45,  kind: 'down' },
-  { value: 1000, label: '$1,000', delta: -75,  kind: 'down' },
-  { value: 1500, label: '$1,500', delta: -135, kind: 'down' },
+  { value: 0, label: '$0', delta: '+$50', tone: 'up' },
+  { value: 500, label: '$500', delta: '+$10', tone: 'up' },
+  { value: 600, label: '$600', delta: 'Default', tone: 'default' },
+  { value: 800, label: '$800', delta: '-$30', tone: 'down' },
+  { value: 900, label: '$900', delta: '-$40', tone: 'down' },
+  { value: 1000, label: '$1,000', delta: '-$50', tone: 'down' },
 ]
+const excess = computed({
+  get: () => quote.quoteSelection.excess ?? 600,
+  set: (v) => { mutable.quoteSelection.excess = v },
+})
 
-function deltaLabel(o) {
-  if (o.kind === 'default') return 'Default'
-  const sign = o.delta > 0 ? '+' : '-'
-  return `${sign}$${Math.abs(o.delta)}/yr`
-}
-
-function sync() {
-  mutable.quoteSelection = {
-    billingCycle: local.billingCycle,
-    excess: local.excess,
-    promoCode: local.appliedPromo ? local.appliedPromo.code : '',
+// Promotions applied (prototype seed).
+const promos = ref([])
+function addDemoPromo() {
+  if (!promos.value.length) {
+    promos.value = [
+      { code: 'Shell Go+ ID: 12345678912345678', desc: 'Enjoy your $100 Shell Fuel + FREE 24 Hour Breakdown Assistance' },
+    ]
   }
 }
+function removePromo(i) { promos.value.splice(i, 1) }
 
-function setBilling(v) { local.billingCycle = v; sync() }
-function setExcess(v) { local.excess = v; sync() }
-
-// DA-only: a customer who opted in to Drive Less, Pay Less gets a usage-based
-// discount on the final personalised premium.
-const driveLessDiscount = computed(() => (quote.driveLess ? 96 : 0))
-
-const annualPremium = computed(() => {
-  const excessAdj = excessOptions.find(e => e.value === local.excess)?.delta ?? 0
-  const promoDiscount = local.appliedPromo ? local.appliedPromo.discount : 0
-  return basePrice + excessAdj - promoDiscount - driveLessDiscount.value
-})
-
-const displayPrice = computed(() => {
-  const annual = annualPremium.value
-  if (local.billingCycle === 'monthly') return (annual / 12).toFixed(2)
-  return annual.toFixed(2)
-})
-
-const priceUnit = computed(() => local.billingCycle === 'monthly' ? 'per month' : 'per year')
-
-// Coverage rows — Figma 4148-3290 (Comprehensive cover summary).
-// Note: collapsed default shows 5; expanded shows all 11.
-const coverageRows = [
-  { label: 'Injury or death to someone else', value: 'Unlimited cover' },
-  { label: "Damage to other people's property", value: 'up to $5,000,000' },
-  { label: 'Legal costs against criminal charges', value: 'up to $3,000' },
-  { label: 'Towing after an accident', value: '$500 overseas / $200 local' },
-  { label: 'Damage by fire', value: 'Included' },
-  { label: 'Damage or loss to your car due to theft', value: 'Included' },
-  { label: 'Damage to your car if someone else crashes into you', value: 'Included' },
-  { label: "Damage to your car when it's your fault", value: 'Included' },
-  { label: 'Damage by fallen trees, flood, storms or natural disaster', value: 'Included' },
-  { label: 'Damage by vandals', value: 'Included' },
-  { label: 'Damage to windscreen or windows', value: 'Included' },
+const coverage = [
+  { name: 'Injury or death to someone else', value: 'Unlimited cover' },
+  { name: "Damage to other people's property", value: 'up to $5,000,000' },
+  { name: 'Legal costs against criminal charges', value: 'up to $3,000' },
+  { name: 'Towing after an accident', value: '$500 for overseas tow and $200 for local tow' },
+  { name: 'Damage by fire', value: 'check' },
 ]
-const visibleCoverage = computed(() =>
-  local.coverageExpanded ? coverageRows : coverageRows.slice(0, 5)
-)
 
-// Promo logic. Mock valid code: SAVEMORE (case insensitive) gives $50 eCapitaVoucher (no premium reduction).
-function applyPromo() {
-  const code = local.promoCode.trim()
-  if (!code) return
-  if (code.toLowerCase() === 'savemore') {
-    local.appliedPromo = {
-      code: 'SAVEMORE',
-      benefit: 'Enjoy your $50 eCapitavoucher',
-      discount: 0,
-    }
-    local.promoError = ''
-    local.promoCode = ''
-    sync()
-  } else {
-    local.promoError = 'This promo code is invalid or cannot be combined with other promo codes!'
-  }
-}
-
-function removePromo() {
-  local.appliedPromo = null
-  local.promoError = ''
-  sync()
-}
-
-function onPromoInput() {
-  if (local.promoError) local.promoError = ''
-}
-
-// Save & email quote flow — Figma 4280-2679.
-const emailState = ref('link') // 'link' | 'editing' | 'sent'
-const emailValue = ref(quote.contact?.email || 'you@example.com')
-
-function startEmail() { emailState.value = 'editing' }
-function submitEmail() {
-  if (!emailValue.value) return
-  emailState.value = 'sent'
-}
-function resetEmail() {
-  emailState.value = 'link'
-}
-
-const carLine = computed(() => {
-  const parts = []
-  if (quote.carYear) parts.push(quote.carYear)
-  if (quote.carMake) parts.push(quote.carMake)
-  if (quote.carModel) parts.push(quote.carModel)
-  return parts.length ? parts.join(' ') : 'Your car'
-})
+function onBack() { router.push('/step/8') }
+function onNext() { router.push('/step/10') }
 </script>
 
 <template>
-  <section class="step">
-    <div class="quote-card">
-      <div class="billing-toggle" role="tablist">
-        <button
-          type="button"
-          role="tab"
-          class="bt-button"
-          :class="{ 'is-on': local.billingCycle === 'annual' }"
-          @click="setBilling('annual')"
-        >Annual</button>
-        <button
-          type="button"
-          role="tab"
-          class="bt-button"
-          :class="{ 'is-on': local.billingCycle === 'monthly' }"
-          @click="setBilling('monthly')"
-        >Monthly</button>
+  <section class="step quote">
+    <div class="quote-stack">
+      <!-- Premium summary -->
+      <div class="q-card">
+        <div class="billing">
+          <button type="button" class="billing-btn" :class="{ 'is-on': billing === 'single' }" @click="setBilling('single')">Single</button>
+          <button type="button" class="billing-btn" :class="{ 'is-on': billing === 'instalment' }" @click="setBilling('instalment')">Instalment</button>
+        </div>
+        <div class="price">
+          <span class="price-amt">{{ headlinePrice }}</span>
+          <span class="price-period">{{ periodLabel }}</span>
+        </div>
+        <div class="breakdown">
+          <div v-for="row in breakdown" :key="row.label" class="bd-row" :class="{ 'is-good': row.good }">
+            <span>{{ row.label }}</span>
+            <span class="bd-val">{{ row.value }}</span>
+          </div>
+        </div>
       </div>
 
-      <div class="price-block">
-        <p class="price">S${{ displayPrice }}</p>
-        <p class="price-sub">{{ priceUnit }} (incl. GST)</p>
+      <!-- Quote ID + vehicle -->
+      <div class="q-card">
+        <p class="q-id">Quote ID: P11254149R00</p>
+        <div class="q-vehicle">
+          <span>{{ coverLabel }}</span>
+          <span>{{ carLabel }}</span>
+        </div>
+        <button type="button" class="q-email">Save and email quote</button>
       </div>
 
-      <div class="breakdown">
-        <div class="row"><span>Premium</span><span>S${{ basePrice.toFixed(2) }}</span></div>
-        <div class="row" v-if="local.excess !== 600">
-          <span>Excess adjustment ({{ excessOptions.find(e => e.value === local.excess)?.label }})</span>
-          <span :class="{ green: (excessOptions.find(e => e.value === local.excess)?.delta ?? 0) < 0 }">
-            {{ (excessOptions.find(e => e.value === local.excess)?.delta ?? 0) > 0 ? '+' : '−' }}S${{ Math.abs(excessOptions.find(e => e.value === local.excess)?.delta ?? 0).toFixed(2) }}
-          </span>
+      <!-- Excess -->
+      <div class="q-section">
+        <div class="q-head">
+          <p class="q-title">Choose your excess</p>
+          <p class="q-sub">
+            The amount you pay towards a claim. A higher excess means a lower premium.
+            <span class="q-info" aria-hidden="true">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x=".67" y=".67" width="14.67" height="14.67" rx="7.33" stroke="currentColor" stroke-width="1.33"/><path d="M7.4 9.54v-.52c0-1.69 1.89-1.93 1.89-3.21 0-.62-.53-1.1-1.27-1.1-.7 0-1.26.47-1.26.47l-.6-.77s.73-.71 1.94-.71c1.26 0 2.32.8 2.32 2.03 0 1.83-1.97 2.02-1.97 3.36v.46H7.4Zm-.02 2.15v-1.08h1.1v1.08h-1.1Z" fill="currentColor"/></svg>
+            </span>
+          </p>
         </div>
-        <div class="row" v-if="quote.driveLess">
-          <span>Drive Less, Pay Less</span>
-          <span class="green">−S${{ driveLessDiscount.toFixed(2) }}</span>
-        </div>
-        <div class="row" v-if="local.appliedPromo">
-          <span>Promo ({{ local.appliedPromo.code }})</span>
-          <span class="green">{{ local.appliedPromo.benefit }}</span>
-        </div>
-        <div class="row total"><span>Total</span><span>S${{ annualPremium.toFixed(2) }}</span></div>
-      </div>
-    </div>
-
-    <div class="meta-card">
-      <p class="meta-id">Quote ID: P11254149R00</p>
-      <div class="meta-body">
-        <p><strong>Comprehensive Car Insurance</strong></p>
-        <p>{{ carLine }}</p>
-      </div>
-
-      <div class="email-action">
-        <button v-if="emailState === 'link'" type="button" class="email-link" @click="startEmail">
-          Save and email quote
-        </button>
-
-        <div v-else-if="emailState === 'editing'" class="email-edit">
-          <InputText
-            v-model="emailValue"
-            placeholder="your@email.com"
-            class="email-input"
-          />
-          <button type="button" class="email-submit" @click="submitEmail">Email quote</button>
-        </div>
-
-        <div v-else class="email-sent">
-          <i class="pi pi-check-circle" aria-hidden="true"></i>
-          <span>Your quote has been sent to <strong>{{ emailValue }}</strong></span>
-          <button type="button" class="email-undo" @click="resetEmail" aria-label="Edit again">
-            <i class="pi pi-pencil"></i>
+        <div class="excess-grid">
+          <button
+            v-for="o in excessOptions"
+            :key="o.value"
+            type="button"
+            class="excess-tile"
+            :class="{ 'is-on': excess === o.value }"
+            @click="excess = o.value"
+          >
+            <span class="ex-val">{{ o.label }}</span>
+            <span class="ex-delta" :class="`tone-${o.tone}`">{{ o.delta }}</span>
           </button>
         </div>
       </div>
-    </div>
 
-    <div class="excess">
-      <h2 class="h-sm">Choose your excess</h2>
-      <p class="block-desc">The amount you pay towards a claim. A higher excess means a lower premium.</p>
-      <div class="excess-grid">
-        <button
-          v-for="o in excessOptions"
-          :key="o.value"
-          type="button"
-          class="excess-card"
-          :class="{ 'is-selected': local.excess === o.value }"
-          @click="setExcess(o.value)"
-        >
-          <span class="excess-amount">{{ o.label }}</span>
-          <span class="excess-delta" :class="{
-            'd-up': o.kind === 'up',
-            'd-down': o.kind === 'down',
-            'd-default': o.kind === 'default',
-          }">{{ deltaLabel(o) }}</span>
-        </button>
-      </div>
-    </div>
-
-    <div class="coverage">
-      <h2 class="h-sm">Coverage Details</h2>
-      <p class="block-desc">Included in your comprehensive plan</p>
-      <div class="coverage-table">
-        <div v-for="r in visibleCoverage" :key="r.label" class="cov-row">
-          <div class="cov-label">{{ r.label }}</div>
-          <div class="cov-value">{{ r.value }}</div>
-        </div>
-        <button type="button" class="cov-toggle" @click="local.coverageExpanded = !local.coverageExpanded">
-          {{ local.coverageExpanded ? 'See less covers' : 'See more covers' }}
-        </button>
-      </div>
-      <p class="cov-footnote">
-        For more details, refer to our <a href="#">policy wording</a>.
-      </p>
-    </div>
-
-    <div class="promo">
-      <h2 class="h-sm">Promotions</h2>
-
-      <div v-if="local.appliedPromo" class="promo-applied">
-        <i class="pi pi-check-circle" aria-hidden="true"></i>
-        <div class="promo-applied-body">
-          <p class="promo-applied-code">{{ local.appliedPromo.code }}</p>
-          <p class="promo-applied-benefit">{{ local.appliedPromo.benefit }}</p>
-        </div>
-        <button type="button" class="promo-remove" aria-label="Remove promo" @click="removePromo">
-          <i class="pi pi-trash"></i>
-        </button>
-      </div>
-
-      <template v-else>
-        <div class="promo-row">
-          <InputText
-            v-model="local.promoCode"
-            @update:model-value="onPromoInput"
-            placeholder="Enter Promo Code"
-            class="promo-input"
-            :class="{ 'is-error': local.promoError }"
-            @keyup.enter="applyPromo"
-          />
-          <button type="button" class="promo-apply" @click="applyPromo">Apply</button>
-        </div>
-        <p v-if="local.promoError" class="da-inline-error">
-          {{ local.promoError }}
+      <!-- Promotions -->
+      <div class="q-section">
+        <p class="q-title">Promotions</p>
+        <p class="q-sub">
+          Would you like to apply a promotion with promo code or
+          <a href="#" @click.prevent="addDemoPromo">Shell Go+ ID</a>?
         </p>
-      </template>
+        <div class="promo-cards">
+          <button type="button" class="promo-card" @click="addDemoPromo">
+            <span class="promo-name">Promo Code</span>
+            <span class="promo-desc">Enter a code from a campaign</span>
+          </button>
+          <button type="button" class="promo-card" @click="addDemoPromo">
+            <span class="promo-name">Shell Go+ ID</span>
+            <span class="promo-desc">Link your Shell GO+ membership</span>
+          </button>
+        </div>
+        <div v-for="(p, i) in promos" :key="p.code" class="promo-applied">
+          <span class="promo-check" aria-hidden="true">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="7" fill="#75BB49"/><path d="M5 8.3l2 2 4-4.6" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </span>
+          <span class="promo-applied-text">
+            <span class="promo-name">{{ p.code }}</span>
+            <span class="promo-desc">{{ p.desc }}</span>
+          </span>
+          <button type="button" class="promo-remove" aria-label="Remove promo" @click="removePromo(i)">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 4h12M5.3 4V2.7h5.4V4M3.3 4v9.3a1.3 1.3 0 001.4 1.4h6.6a1.3 1.3 0 001.4-1.4V4" stroke="#1E1E1E" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Coverage details -->
+      <div class="q-section">
+        <p class="q-title">Coverage Details</p>
+        <p class="q-sub">Included in your comprehensive plan</p>
+        <div class="cov-table">
+          <div class="cov-head">Core Cover(s)</div>
+          <div v-for="row in coverage" :key="row.name" class="cov-row">
+            <div class="cov-name">
+              <span>{{ row.name }}</span>
+              <svg class="cov-chev" width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M4.94 5.73L8 8.78l3.06-3.05L12 6.67 8 10.67 4 6.67l.94-.94Z" fill="#000"/></svg>
+            </div>
+            <div class="cov-val">
+              <svg v-if="row.value === 'check'" width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" fill="#75BB49"/><path d="M8 12.3l2.6 2.6L16 8.6" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              <span v-else>{{ row.value }}</span>
+            </div>
+          </div>
+          <button type="button" class="cov-more">See more covers</button>
+        </div>
+        <p class="q-policy">For more details, refer to our <a href="#" @click.prevent>policy wording</a>.</p>
+      </div>
     </div>
 
-    <StickyNext label="Buy now" />
+    <!-- Sticky quote footer: back · running price · Next -->
+    <div class="quote-footer">
+      <button type="button" class="qf-back" aria-label="Go back" @click="onBack">
+        <i class="pi pi-chevron-left" aria-hidden="true"></i>
+      </button>
+      <div class="qf-price">
+        <span class="qf-amt">{{ headlinePrice }}</span>
+        <span class="qf-period">{{ periodLabel }}</span>
+      </div>
+      <button type="button" class="qf-next" @click="onNext">
+        Next
+        <i class="pi pi-chevron-right" aria-hidden="true"></i>
+      </button>
+    </div>
   </section>
 </template>
 
 <style scoped>
-.step {
-  padding-top: 24px;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
+.quote { padding-top: 24px; display: flex; flex-direction: column; }
+.quote-stack { display: flex; flex-direction: column; gap: 16px; }
 
-.h-sm { font-size: 16px; font-weight: 900; color: var(--da-carbon); margin: 0; }
-.block-desc {
-  margin: 0 0 8px 0;
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--da-carbon);
-  line-height: 1.5;
-}
-
-.quote-card {
+.q-card {
   background: #fff;
-  border: 1px solid var(--da-grey-200);
-  border-radius: var(--da-radius-card);
+  border: 1px solid rgba(221, 221, 221, 0.87);
+  border-radius: 8px;
   padding: 16px;
   display: flex;
   flex-direction: column;
   gap: 16px;
 }
 
-.billing-toggle {
-  background: var(--da-grey-100);
-  border: 1px solid var(--da-grey-200);
-  border-radius: 999px;
-  padding: 3px;
+/* Billing toggle. */
+.billing {
   display: flex;
   gap: 2px;
+  padding: 2px;
+  height: 43px;
+  background: #F5F5F5;
+  border: 1px solid var(--da-line-soft);
+  border-radius: 12px;
 }
-.bt-button {
+.billing-btn {
   flex: 1;
-  background: transparent;
   border: 0;
-  border-radius: 999px;
-  padding: 8px 12px;
+  border-radius: 12px;
+  background: transparent;
   font-family: var(--da-font);
-  font-weight: 700;
-  font-size: 13px;
-  color: var(--da-carbon);
+  font-size: 12px;
+  font-weight: 500;
+  color: #000;
   cursor: pointer;
 }
-.bt-button.is-on {
-  background: var(--da-carbon);
+.billing-btn.is-on {
+  background: var(--da-blue);
   color: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
-.price-block { text-align: center; }
-.price {
-  margin: 0;
-  font-size: 36px;
-  font-weight: 900;
-  color: var(--da-green);
-  line-height: 1.1;
-}
-.price-sub {
-  margin: 4px 0 0;
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--da-carbon);
-}
+/* Headline price. */
+.price { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.price-amt { font-size: 36px; font-weight: 700; color: var(--da-green); line-height: 1.1; }
+.price-period { font-size: 14px; font-weight: 400; color: #000; }
 
-.breakdown { display: flex; flex-direction: column; gap: 6px; padding-top: 12px; border-top: 1px solid var(--da-grey-200); }
-.row {
+.breakdown { display: flex; flex-direction: column; gap: 8px; }
+.bd-row {
   display: flex;
   justify-content: space-between;
-  gap: 12px;
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--da-carbon);
-}
-.row .green { color: var(--da-green); }
-.row.total { font-weight: 900; padding-top: 6px; border-top: 1px solid var(--da-grey-200); margin-top: 4px; }
-
-.meta-card {
-  background: #fff;
-  border: 1px solid var(--da-grey-200);
-  border-radius: var(--da-radius-card);
-  padding: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-.meta-id { margin: 0; font-size: 14px; font-weight: 900; color: var(--da-carbon); }
-.meta-body {
-  border-left: 3px solid var(--da-green);
-  padding-left: 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-.meta-body p { margin: 0; font-size: 14px; font-weight: 500; color: var(--da-carbon); line-height: 1.4; }
-
-.email-action { padding-top: 4px; }
-.email-link {
-  background: transparent;
-  border: 0;
-  padding: 0;
-  color: var(--da-cyan);
   font-family: var(--da-font);
   font-size: 14px;
   font-weight: 500;
-  cursor: pointer;
-  text-decoration: none;
+  color: #000;
 }
-.email-link:hover { text-decoration: underline; }
+.bd-row.is-good, .bd-row.is-good .bd-val { color: var(--da-green); }
 
-.email-edit { display: flex; align-items: stretch; }
-.email-edit :deep(.email-input) {
-  flex: 1;
-  border-color: var(--da-green);
-  border-right: 0;
-  border-radius: 8px 0 0 8px !important;
-  min-height: 44px;
-  font-size: 14px !important;
-}
-.email-submit {
-  background: var(--da-green);
-  color: #fff;
-  border: 0;
-  border-radius: 0 8px 8px 0;
-  padding: 0 16px;
-  font-family: var(--da-font);
-  font-weight: 700;
-  font-size: 14px;
-  cursor: pointer;
-}
-
-.email-sent {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  background: #fff;
-  border: 1px solid var(--da-grey-200);
-  border-radius: 8px;
-  padding: 10px 12px;
-  font-size: 14px;
-  color: var(--da-carbon);
-}
-.email-sent .pi-check-circle { color: var(--da-green); font-size: 18px; flex-shrink: 0; }
-.email-sent strong { font-weight: 900; word-break: break-all; }
-.email-undo {
-  margin-left: auto;
-  background: transparent;
-  border: 0;
-  color: var(--da-cyan);
-  cursor: pointer;
-  padding: 4px;
-}
-
-.excess { display: flex; flex-direction: column; gap: 8px; }
-.excess-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
-.excess-card {
-  background: #fff;
-  border: 1px solid var(--da-grey-300);
-  border-radius: var(--da-radius-card);
-  padding: 12px 8px;
+/* Quote ID card. */
+.q-id { margin: 0; font-size: 16px; font-weight: 700; color: #000; }
+.q-vehicle {
   display: flex;
   flex-direction: column;
   gap: 4px;
+  padding-left: 16px;
+  border-left: 1px solid var(--da-line-soft);
+  font-size: 14px;
+  font-weight: 500;
+  color: #000;
+  line-height: 16px;
+}
+.q-email {
+  align-self: flex-start;
+  width: 100%;
+  padding: 8px;
+  background: #fff;
+  border: 1px solid var(--da-outline);
+  border-radius: 8px;
+  font-family: var(--da-font);
+  font-size: 16px;
+  font-weight: 400;
+  color: #000;
+  cursor: pointer;
+}
+
+/* Sections. */
+.q-section { display: flex; flex-direction: column; gap: 8px; }
+.q-title { margin: 0; font-size: 16px; font-weight: 700; color: #000; }
+.q-sub { margin: 0; font-size: 14px; font-weight: 500; color: #000; line-height: 1.45; }
+.q-sub a { color: var(--da-blue); text-decoration: underline; }
+.q-info { display: inline-flex; vertical-align: middle; color: #000; margin-left: 2px; }
+
+/* Excess grid. */
+.excess-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-top: 4px;
+}
+.excess-tile {
+  height: 56px;
+  display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  min-height: 64px;
-  font-family: var(--da-font);
+  gap: 4px;
+  background: #fff;
+  border: 1px solid rgba(221, 221, 221, 0.87);
+  border-radius: 8px;
   cursor: pointer;
 }
-.excess-card.is-selected {
-  border-color: var(--da-green);
-  box-shadow: 0 0 0 1px var(--da-green) inset;
-}
-.excess-amount { font-size: 16px; font-weight: 700; color: var(--da-carbon); }
-.excess-delta { font-size: 12px; font-weight: 500; }
-.d-up { color: var(--da-red); }
-.d-down { color: var(--da-green); }
-.d-default { color: var(--da-grey-600); }
+.excess-tile.is-on { background: var(--da-blue); }
+.ex-val { font-size: 16px; font-weight: 600; color: #000; }
+.ex-delta { font-size: 12px; font-weight: 500; }
+.ex-delta.tone-up { color: var(--da-error); }
+.ex-delta.tone-down { color: var(--da-green); }
+.ex-delta.tone-default { color: #000; }
+.excess-tile.is-on .ex-val, .excess-tile.is-on .ex-delta { color: #fff; }
 
-.coverage { display: flex; flex-direction: column; gap: 8px; }
-.coverage-table {
-  border-radius: var(--da-radius-card);
-  overflow: hidden;
-  border: 1px solid var(--da-grey-200);
-}
-.cov-row {
-  display: grid;
-  grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
-  border-bottom: 1px solid var(--da-grey-200);
-}
-.cov-label {
-  background: #fff;
-  padding: 12px 16px;
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--da-carbon);
-  line-height: 1.4;
-}
-.cov-value {
-  background: var(--da-grey-100);
-  padding: 12px 16px;
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--da-carbon);
-  text-align: center;
-  line-height: 1.4;
-}
-.cov-toggle {
-  width: 100%;
-  background: #fff;
-  border: 0;
-  padding: 12px 16px;
-  font-family: var(--da-font);
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--da-cyan);
-  cursor: pointer;
-}
-.cov-footnote {
-  margin: 0;
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--da-carbon);
-}
-.cov-footnote a { color: var(--da-cyan); }
-
-.promo { display: flex; flex-direction: column; gap: 8px; }
-.promo-row { display: flex; align-items: stretch; }
-.promo-row :deep(.promo-input) {
+/* Promotions. */
+.promo-cards { display: flex; gap: 16px; margin-top: 8px; }
+.promo-card {
   flex: 1;
-  border-color: var(--da-grey-300);
-  border-right: 0;
-  border-radius: 8px 0 0 8px !important;
-  min-height: 48px;
-  font-size: 16px !important;
-}
-.promo-row :deep(.promo-input.is-error) {
-  border-color: var(--da-red);
-}
-.promo-row :deep(.promo-input:focus-within),
-.promo-row :deep(.promo-input.p-focus) {
-  border-color: var(--da-green);
-}
-.promo-apply {
-  background: var(--da-green);
-  color: #fff;
-  border: 0;
-  border-radius: 0 8px 8px 0;
-  padding: 0 20px;
-  font-family: var(--da-font);
-  font-weight: 700;
-  font-size: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 16px;
+  background: #fff;
+  border: 1px solid var(--da-line-soft);
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1), 0 1px 1px rgba(0, 0, 0, 0.05);
+  text-align: left;
   cursor: pointer;
-  min-height: 48px;
 }
-
+.promo-name { font-size: 14px; font-weight: 700; color: var(--da-ink); }
+.promo-desc { font-size: 12px; font-weight: 500; color: var(--da-ink); }
 .promo-applied {
   display: flex;
   align-items: flex-start;
-  gap: 12px;
-  background: #fff;
-  border: 1px solid var(--da-grey-200);
-  border-radius: var(--da-radius-card);
+  gap: 8px;
   padding: 12px 14px;
+  background: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  margin-top: 8px;
 }
-.promo-applied .pi-check-circle { color: var(--da-green); font-size: 18px; flex-shrink: 0; margin-top: 1px; }
-.promo-applied-body { flex: 1; display: flex; flex-direction: column; gap: 2px; }
-.promo-applied-code { margin: 0; font-size: 14px; font-weight: 900; color: var(--da-carbon); }
-.promo-applied-benefit { margin: 0; font-size: 12px; font-weight: 500; color: var(--da-carbon); }
-.promo-remove {
-  background: transparent;
-  border: 0;
-  color: var(--da-grey-600);
+.promo-check { flex: 0 0 16px; margin-top: 2px; }
+.promo-applied-text { flex: 1; display: flex; flex-direction: column; gap: 4px; }
+.promo-remove { background: 0; border: 0; cursor: pointer; padding: 2px; }
+
+/* Coverage table. */
+.cov-table { display: flex; flex-direction: column; }
+.cov-head {
+  padding: 12px 16px;
+  border: 1px solid var(--da-line-soft);
+  border-radius: 8px 8px 0 0;
+  font-size: 14px;
+  font-weight: 800;
+  color: #000;
+  background: #fff;
+}
+.cov-row { display: flex; }
+.cov-name {
+  width: 60%;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 12px 16px;
+  background: #fff;
+  border-left: 1px solid var(--da-line-soft);
+  border-bottom: 1px solid var(--da-line-soft);
+  font-size: 14px;
+  font-weight: 500;
+  color: #000;
+  line-height: 20px;
+}
+.cov-chev { flex: 0 0 16px; margin-top: 2px; }
+.cov-val {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 12px 16px;
+  background: #E6E9ED;
+  border-right: 1px solid var(--da-line-soft);
+  border-bottom: 1px solid var(--da-line-soft);
+  font-size: 14px;
+  font-weight: 500;
+  color: #000;
+  line-height: 20px;
+}
+.cov-more {
+  padding: 8px 16px;
+  background: #fff;
+  border: 1px solid var(--da-line-soft);
+  border-top: 0;
+  border-radius: 0 0 8px 8px;
+  font-family: var(--da-font);
+  font-size: 14px;
+  font-weight: 500;
+  color: #000;
+  text-decoration: underline;
   cursor: pointer;
-  padding: 4px;
 }
+.q-policy { margin: 0; font-size: 14px; font-weight: 500; color: #000; }
+.q-policy a { color: #000; text-decoration: underline; }
+
+/* Sticky quote footer (back · price · Next). */
+.quote-footer {
+  position: sticky;
+  bottom: 0;
+  z-index: 20;
+  margin: auto -16px 0 -16px;
+  padding: 24px 16px 12px;
+  background: var(--da-yellow);
+  border-top-left-radius: var(--da-radius-lg);
+  border-top-right-radius: var(--da-radius-lg);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.qf-back {
+  flex: 0 0 72px;
+  height: 47px;
+  background: var(--da-yellow);
+  border: 1px solid var(--da-outline);
+  border-radius: 8px;
+  box-shadow: var(--da-btn-shadow);
+  color: #1D1B20;
+  cursor: pointer;
+}
+.qf-price { display: flex; align-items: baseline; gap: 4px; }
+.qf-amt { font-size: 20px; font-weight: 700; color: #000; }
+.qf-period { font-size: 14px; font-weight: 400; color: #000; }
+.qf-next {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 47px;
+  padding: 0 18px;
+  background: var(--da-green);
+  border: 0;
+  border-radius: 8px;
+  box-shadow: var(--da-btn-shadow);
+  color: #fff;
+  font-family: var(--da-font);
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+}
+.qf-next:hover { background: var(--da-green-hover, #69A841); }
 </style>
