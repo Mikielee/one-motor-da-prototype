@@ -76,9 +76,9 @@ const routes = [
   },
   {
     path: '/step/12',
-    name: 'step-12-optional-benefits',
-    component: () => import('../views/Step11OptionalBenefits.vue'),
-    meta: { step: 12, group: 2, omp: 'OMP-362', title: 'Optional Benefits' },
+    name: 'step-12-finalise-pay',
+    component: () => import('../views/Step12FinalisePay.vue'),
+    meta: { step: 12, group: 3, omp: 'OMP-95', title: 'Finalise & Pay' },
   },
   { path: '/:pathMatch(.*)*', redirect: '/step/1' },
 ]
