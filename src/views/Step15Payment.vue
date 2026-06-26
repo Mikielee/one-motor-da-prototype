@@ -24,9 +24,9 @@ function setMethod(v) { mutable.paymentMethod = v }
 function setBank(v) { mutable.instalmentBank = v }
 
 const banks = [
-  { value: 'uob', label: 'UOB', color: '#E1091D' },
-  { value: 'dbs', label: 'DBS', color: '#FF3333' },
-  { value: 'ocbc', label: 'OCBC', color: '#ED1C24' },
+  { value: 'uob', label: 'UOB', img: '/pay/uob.png' },
+  { value: 'dbs', label: 'DBS', img: '/pay/dbs.png' },
+  { value: 'ocbc', label: 'OCBC', img: '/pay/ocbc.png' },
 ]
 
 const canPay = computed(() =>
@@ -66,14 +66,10 @@ function onPay() {
       <!-- Single: card or PayNow -->
       <div v-if="option === 'single'" class="method-row">
         <button type="button" class="method" :class="{ 'is-on': quote.paymentMethod === 'card' }" @click="setMethod('card')">
-          <span class="brands">
-            <span class="brand brand-amex">AMEX</span>
-            <span class="brand brand-mc"><i></i><i></i></span>
-            <span class="brand brand-visa">VISA</span>
-          </span>
+          <img class="logo-cards" src="/pay/cards.png" alt="American Express, Mastercard, Visa" />
         </button>
         <button type="button" class="method" :class="{ 'is-on': quote.paymentMethod === 'paynow' }" @click="setMethod('paynow')">
-          <span class="brand brand-paynow">PAY<span>NOW</span></span>
+          <img class="logo-paynow" src="/pay/paynow.png" alt="PayNow" />
         </button>
       </div>
 
@@ -81,11 +77,7 @@ function onPay() {
       <div v-else class="instalment">
         <div class="cc-only">
           <span class="cc-label">Credit card only</span>
-          <span class="brands">
-            <span class="brand brand-amex">AMEX</span>
-            <span class="brand brand-mc"><i></i><i></i></span>
-            <span class="brand brand-visa">VISA</span>
-          </span>
+          <img class="logo-cards" src="/pay/cards.png" alt="American Express, Mastercard, Visa" />
         </div>
         <div class="bank-row">
           <button
@@ -96,7 +88,7 @@ function onPay() {
             :class="{ 'is-on': quote.instalmentBank === b.value }"
             @click="setBank(b.value)"
           >
-            <span class="brand-bank" :style="{ color: b.color }">{{ b.label }}</span>
+            <img class="logo-bank" :src="b.img" :alt="b.label" />
           </button>
         </div>
       </div>
@@ -191,36 +183,16 @@ function onPay() {
 }
 .method.is-on { border-color: var(--da-blue); box-shadow: 0 0 0 1px var(--da-blue) inset; }
 
-.brands { display: inline-flex; align-items: center; gap: 7px; }
-.brand {
-  display: inline-flex;
-  align-items: center;
-  font-family: var(--da-font);
-  font-weight: 800;
-  font-size: 11px;
-  letter-spacing: 0.3px;
-}
-.brand-amex { background: #016FD0; color: #fff; border-radius: 3px; padding: 2px 4px; }
-.brand-visa { color: #1A1F71; font-style: italic; font-size: 13px; }
-.brand-paynow { color: #90278B; font-size: 14px; }
-.brand-paynow span { color: #D4007A; }
-.brand-mc { position: relative; width: 26px; height: 16px; }
-.brand-mc i {
-  position: absolute;
-  top: 0;
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-}
-.brand-mc i:first-child { left: 0; background: #EB001B; }
-.brand-mc i:last-child { right: 0; background: #F79E1B; mix-blend-mode: multiply; }
+/* Brand artwork (from 04_Design). */
+.logo-cards { height: 24px; width: auto; display: block; }
+.logo-paynow { height: 18px; width: auto; display: block; }
+.logo-bank { height: 16px; width: auto; display: block; }
 
 .instalment { display: flex; flex-direction: column; gap: 16px; }
 .cc-only { display: flex; align-items: center; justify-content: center; gap: 8px; }
 .cc-label { font-family: var(--da-font); font-size: 14px; font-weight: 500; color: #49454F; }
 .bank-row { display: flex; gap: 8px; }
 .bank { flex: 1; }
-.brand-bank { font-family: var(--da-font); font-weight: 800; font-size: 16px; }
 
 .secure-note {
   margin: 0;
@@ -240,7 +212,7 @@ function onPay() {
   position: sticky;
   bottom: 0;
   z-index: 20;
-  margin: 8px -16px 0 -16px;
+  margin: auto -16px 0 -16px;
   padding: 24px 16px 12px;
   background: var(--da-yellow);
   border-top-left-radius: var(--da-radius-lg);

@@ -374,7 +374,7 @@ function onNext() {
   position: sticky;
   bottom: 0;
   z-index: 20;
-  margin: 8px -16px 0 -16px;
+  margin: auto -16px 0 -16px;
   padding: 24px 16px 12px;
   background: var(--da-yellow);
   border-top-left-radius: var(--da-radius-lg);
