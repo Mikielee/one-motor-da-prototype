@@ -105,9 +105,8 @@ const finError = computed(() => showErrors.value && quote.carFinancing === null)
 
 function onBack() { router.push('/step/12') }
 function onNext() {
-  // Last step of the prototype — payment is out of scope. Invalid click reveals
-  // the field errors; a valid click currently goes nowhere.
   if (!canContinue.value) { reveal(); return }
+  router.push('/step/14')
 }
 </script>
 
