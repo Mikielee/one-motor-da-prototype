@@ -92,6 +92,12 @@ const routes = [
     component: () => import('../views/Step14ReviewCover.vue'),
     meta: { step: 14, group: 3, omp: 'OMP-96', title: 'Review your cover' },
   },
+  {
+    path: '/step/15',
+    name: 'step-15-payment',
+    component: () => import('../views/Step15Payment.vue'),
+    meta: { step: 15, group: 3, omp: 'OMP-97', title: 'Payment' },
+  },
   { path: '/:pathMatch(.*)*', redirect: '/step/1' },
 ]
 

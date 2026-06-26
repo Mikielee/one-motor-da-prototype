@@ -48,6 +48,9 @@ const state = reactive({
     excess: 600,
     promoCode: '',
   },
+  paymentOption: 'single',   // Step 15: 'single' | 'instalment'
+  paymentMethod: null,       // Step 15 (single): 'card' | 'paynow'
+  instalmentBank: null,      // Step 15 (instalment): 'uob' | 'dbs' | 'ocbc'
   hasAdditionalDrivers: null,  // Q1: anyone else in the household drives the car
   hasUnder30Drivers: null,     // Q2: any household drivers under 30 (only asked when Q1 = Yes)
   hasOutsideDrivers: null,     // Q3: anyone outside the household drives the car

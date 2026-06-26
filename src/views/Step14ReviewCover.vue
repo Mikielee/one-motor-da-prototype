@@ -192,8 +192,8 @@ function editCar() { router.push('/step/13') }
 function editBenefits() { router.push('/step/12') }
 function onBack() { router.push('/step/13') }
 function onNext() {
-  // End of the prototype — payment is out of scope. Gated on the disclosure.
   if (!agreed.value) return
+  router.push('/step/15')
 }
 </script>
 
