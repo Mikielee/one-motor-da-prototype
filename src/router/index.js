@@ -64,15 +64,21 @@ const routes = [
   },
   {
     path: '/step/10',
-    name: 'step-10-additional-drivers',
-    component: () => import('../views/Step10AdditionalDrivers.vue'),
-    meta: { step: 10, group: 2, omp: 'OMP-361', title: 'Additional Drivers' },
+    name: 'step-10-main-driver-details',
+    component: () => import('../views/Step10MainDriverDetails.vue'),
+    meta: { step: 10, group: 1, omp: 'OMP-992', title: 'Main Driver Details' },
   },
   {
     path: '/step/11',
-    name: 'step-11-optional-benefits',
+    name: 'step-11-additional-drivers',
+    component: () => import('../views/Step10AdditionalDrivers.vue'),
+    meta: { step: 11, group: 1, omp: 'OMP-361', title: 'Additional Drivers' },
+  },
+  {
+    path: '/step/12',
+    name: 'step-12-optional-benefits',
     component: () => import('../views/Step11OptionalBenefits.vue'),
-    meta: { step: 11, group: 2, omp: 'OMP-362', title: 'Optional Benefits' },
+    meta: { step: 12, group: 2, omp: 'OMP-362', title: 'Optional Benefits' },
   },
   { path: '/:pathMatch(.*)*', redirect: '/step/1' },
 ]
