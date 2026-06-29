@@ -6,6 +6,7 @@ import DaDateField from '../components/DaDateField.vue'
 import DaSearchSelect from '../components/DaSearchSelect.vue'
 import FieldError from '../components/FieldError.vue'
 import { useQuote } from '../store/quote'
+import DaQuoteFooter from '../components/DaQuoteFooter.vue'
 import { useValidation } from '../composables/useValidation'
 
 // Finalise & Pay details — Figma 4962-3081 ("Just a few more details to get you
@@ -198,23 +199,7 @@ useDemoAutofill().register(() => { const m = mutable.mainDriver; m.name = 'Mikie
       </div>
     </div>
 
-    <!-- Sticky price footer: back · total · Next -->
-    <div class="quote-footer">
-      <button type="button" class="qf-chip" aria-label="Price breakdown">
-        <i class="pi pi-chevron-up" aria-hidden="true"></i>
-      </button>
-      <button type="button" class="qf-back" aria-label="Go back" @click="onBack">
-        <i class="pi pi-chevron-left" aria-hidden="true"></i>
-      </button>
-      <div class="qf-price">
-        <span class="qf-amt">{{ headlinePrice }}</span>
-        <span class="qf-period">Total</span>
-      </div>
-      <button type="button" class="qf-next" :class="{ 'is-blocked': !canContinue }" @click="onNext">
-        Next
-        <i class="pi pi-chevron-right" aria-hidden="true"></i>
-      </button>
-    </div>
+    <DaQuoteFooter :disabled="!canContinue" @blocked="reveal" />
   </section>
 </template>
 

@@ -2,6 +2,7 @@
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useQuote } from '../store/quote'
+import DaQuoteFooter from '../components/DaQuoteFooter.vue'
 
 // "Review your cover" — Figma 4962-... proposal summary. Read-only recap of
 // everything captured; edit pencils jump back to the relevant step. The footer
@@ -339,23 +340,7 @@ useDemoAutofill().register(() => { agreed.value = true })
       </button>
     </div>
 
-    <!-- Sticky price footer: back · total · Next -->
-    <div class="quote-footer">
-      <button type="button" class="qf-chip" aria-label="Price breakdown">
-        <i class="pi pi-chevron-up" aria-hidden="true"></i>
-      </button>
-      <button type="button" class="qf-back" aria-label="Go back" @click="onBack">
-        <i class="pi pi-chevron-left" aria-hidden="true"></i>
-      </button>
-      <div class="qf-price">
-        <span class="qf-amt">{{ headlinePrice }}</span>
-        <span class="qf-period">Total</span>
-      </div>
-      <button type="button" class="qf-next" :class="{ 'is-blocked': !agreed }" @click="onNext">
-        Next
-        <i class="pi pi-chevron-right" aria-hidden="true"></i>
-      </button>
-    </div>
+    <DaQuoteFooter :disabled="!agreed" />
   </section>
 </template>
 

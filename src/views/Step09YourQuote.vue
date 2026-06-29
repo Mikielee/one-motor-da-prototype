@@ -3,6 +3,7 @@ import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useQuote } from '../store/quote'
 import DaSheet from '../components/DaSheet.vue'
+import DaQuoteFooter from '../components/DaQuoteFooter.vue'
 
 const { quote, mutable } = useQuote()
 const router = useRouter()
@@ -54,8 +55,9 @@ const excess = computed({
   set: (v) => { mutable.quoteSelection.excess = v },
 })
 
-// --- Promotions — Promo Code and Shell Go+ ID are two SEPARATE, stackable flows ---
-const appliedPromos = ref([])
+// --- Promotions — Promo Code and Shell Go+ ID are two SEPARATE, stackable flows.
+// Stored on the quote so the price footer can surface them on later pages too. ---
+const appliedPromos = computed(() => quote.appliedPromos)
 const openSheet = ref(null) // 'promo' | 'shell' | null
 const promoInput = ref('')
 const shellInput = ref('')
@@ -63,7 +65,7 @@ const shellInput = ref('')
 function applyPromoCode() {
   const code = promoInput.value.trim().toUpperCase()
   if (!code) return
-  appliedPromos.value.push({
+  mutable.appliedPromos.push({
     name: code,
     desc: 'Enjoy your 1 month free car insurance + $50 eCapitavoucher',
   })
@@ -73,14 +75,14 @@ function applyPromoCode() {
 function applyShell() {
   const id = shellInput.value.replace(/\D/g, '')
   if (!id) return
-  appliedPromos.value.push({
+  mutable.appliedPromos.push({
     name: `Shell Go+ ID: ${id}`,
     desc: 'Enjoy your $100 Shell Fuel + FREE 24 Hour Breakdown Assistance',
   })
   shellInput.value = ''
   openSheet.value = null
 }
-function removePromo(i) { appliedPromos.value.splice(i, 1) }
+function removePromo(i) { mutable.appliedPromos.splice(i, 1) }
 
 // --- Save & email quote ---
 const saveOpen = ref(false)
@@ -111,8 +113,6 @@ const coverage = [
 const showAllCovers = ref(false)
 const visibleCovers = computed(() => (showAllCovers.value ? coverage : coverage.slice(0, 5)))
 
-function onBack() { router.push('/step/8') }
-function onNext() { router.push('/step/10') }
 </script>
 
 <template>
@@ -227,20 +227,8 @@ function onNext() { router.push('/step/10') }
       </div>
     </div>
 
-    <!-- Sticky quote footer: back · running price · Next -->
-    <div class="quote-footer">
-      <button type="button" class="qf-back" aria-label="Go back" @click="onBack">
-        <i class="pi pi-chevron-left" aria-hidden="true"></i>
-      </button>
-      <div class="qf-price">
-        <span class="qf-amt">{{ headlinePrice }}</span>
-        <span class="qf-period">{{ periodLabel }}</span>
-      </div>
-      <button type="button" class="qf-next" @click="onNext">
-        Next
-        <i class="pi pi-chevron-right" aria-hidden="true"></i>
-      </button>
-    </div>
+    <!-- Sticky running-price footer (expandable breakdown) -->
+    <DaQuoteFooter />
 
     <!-- Promo code sheet -->
     <DaSheet :open="openSheet === 'promo'" title="Promo Code" @close="openSheet = null">

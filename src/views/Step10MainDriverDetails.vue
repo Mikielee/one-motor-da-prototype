@@ -3,7 +3,7 @@ import { computed } from 'vue'
 import DaFloatingInput from '../components/DaFloatingInput.vue'
 import DaDateField from '../components/DaDateField.vue'
 import DaSearchSelect from '../components/DaSearchSelect.vue'
-import StickyNext from '../components/StickyNext.vue'
+import DaQuoteFooter from '../components/DaQuoteFooter.vue'
 import FieldError from '../components/FieldError.vue'
 import { useQuote } from '../store/quote'
 import { useValidation } from '../composables/useValidation'
@@ -149,7 +149,7 @@ useDemoAutofill().register(() => { const m = mutable.mainDriver; m.name = 'Mikie
       </div>
     </div>
 
-    <StickyNext :disabled="!canContinue" @blocked="reveal" />
+    <DaQuoteFooter :disabled="!canContinue" @blocked="reveal" />
   </section>
 </template>
 

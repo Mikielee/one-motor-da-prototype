@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useQuote } from '../store/quote'
+import DaQuoteFooter from '../components/DaQuoteFooter.vue'
 
 // Payment — Figma 4962-3081. Choose Single (Save 3%) or Instalment.
 //  - Single    : pay by Card (Amex/Mastercard/Visa) or PayNow.
@@ -106,23 +107,7 @@ useDemoAutofill().register(() => { mutable.paymentOption = 'single'; mutable.pay
       You'll be directed to our secure payment gateway.
     </p>
 
-    <!-- Sticky price footer: back · total · Pay -->
-    <div class="quote-footer">
-      <button type="button" class="qf-chip" aria-label="Price breakdown">
-        <i class="pi pi-chevron-up" aria-hidden="true"></i>
-      </button>
-      <button type="button" class="qf-back" aria-label="Go back" @click="onBack">
-        <i class="pi pi-chevron-left" aria-hidden="true"></i>
-      </button>
-      <div class="qf-price">
-        <span class="qf-amt">{{ headlinePrice }}</span>
-        <span class="qf-period">Total</span>
-      </div>
-      <button type="button" class="qf-next" :class="{ 'is-blocked': !canPay }" @click="onPay">
-        Pay
-        <i class="pi pi-chevron-right" aria-hidden="true"></i>
-      </button>
-    </div>
+    <DaQuoteFooter next-label="Pay" :disabled="!canPay" />
   </section>
 </template>
 

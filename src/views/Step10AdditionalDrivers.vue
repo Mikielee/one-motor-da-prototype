@@ -3,7 +3,7 @@ import { ref, reactive, computed } from 'vue'
 import DaFloatingInput from '../components/DaFloatingInput.vue'
 import DaDateField from '../components/DaDateField.vue'
 import DaSearchSelect from '../components/DaSearchSelect.vue'
-import StickyNext from '../components/StickyNext.vue'
+import DaQuoteFooter from '../components/DaQuoteFooter.vue'
 import { useQuote } from '../store/quote'
 
 // Additional Drivers — OMP-361, DA-only. Figma 5269-3520 ("Who drives your car?").
@@ -373,7 +373,7 @@ useDemoAutofill().register(() => {
       </template>
     </template>
 
-    <StickyNext :disabled="!canContinue" />
+    <DaQuoteFooter :disabled="!canContinue" />
   </section>
 </template>
 

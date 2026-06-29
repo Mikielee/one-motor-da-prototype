@@ -48,6 +48,7 @@ const state = reactive({
     excess: 600,
     promoCode: '',
   },
+  appliedPromos: [],         // Step 9: [{ name, desc }] — surfaced in the price footer too
   paymentOption: 'single',   // Step 15: 'single' | 'instalment'
   paymentMethod: null,       // Step 15 (single): 'card' | 'paynow'
   instalmentBank: null,      // Step 15 (instalment): 'uob' | 'dbs' | 'ocbc'
