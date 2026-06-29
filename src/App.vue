@@ -1,7 +1,19 @@
 <script setup>
+import { ref, watch, nextTick } from 'vue'
+import { useRoute } from 'vue-router'
 import AppHeader from './components/AppHeader.vue'
 import AppFooter from './components/AppFooter.vue'
 import StepIndicator from './components/StepIndicator.vue'
+
+// The scrolling region is this inner div, not the window — so the router's
+// scrollBehavior can't reset it. Without this, navigating from a scrolled step
+// (e.g. Step 8 -> Quote) lands mid-page and looks blank until a refresh.
+const scrollEl = ref(null)
+const route = useRoute()
+watch(
+  () => route.fullPath,
+  () => { nextTick(() => scrollEl.value?.scrollTo(0, 0)) }
+)
 </script>
 
 <template>
@@ -10,7 +22,7 @@ import StepIndicator from './components/StepIndicator.vue'
     <StepIndicator />
     <!-- The only scrolling region: step content + footer. The CTA bar inside a
          step sticks to the bottom of this region while the content scrolls. -->
-    <div class="da-scroll">
+    <div class="da-scroll" ref="scrollEl">
       <main class="da-page">
         <router-view v-slot="{ Component }">
           <transition name="fade" mode="out-in">
