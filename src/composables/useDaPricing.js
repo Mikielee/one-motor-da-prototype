@@ -35,8 +35,15 @@ export function useDaPricing() {
   const authorisedImpact = computed(() => (quote.hasOutsideDrivers === true ? 20000 : 0))
   const mileageDiscount = computed(() => (quote.driveLess === true ? 2000 : 0))
 
+  // Excess: a higher excess lowers the premium and vice versa (Step 9 grid).
+  // $600 is the default (no impact). Values + deltas in cents.
+  const EXCESS_DELTA = { 0: 5000, 500: 1000, 600: 0, 800: -3000, 900: -4000, 1000: -5000 }
+  const excessValue = computed(() => quote.quoteSelection?.excess ?? 600)
+  const excessImpact = computed(() => EXCESS_DELTA[excessValue.value] ?? 0)
+
   const totalCents = computed(() =>
-    BASE + driverImpact.value + householdImpact.value + authorisedImpact.value - mileageDiscount.value
+    BASE + driverImpact.value + householdImpact.value + authorisedImpact.value
+    - mileageDiscount.value + excessImpact.value
   )
 
   const displayAmount = computed(() => money(totalCents.value))
@@ -51,6 +58,14 @@ export function useDaPricing() {
     if (driverImpact.value) r.push({ label: `Named drivers (${driverCount.value})`, value: '+' + money(driverImpact.value) })
     if (householdImpact.value) r.push({ label: 'Household driver plan', value: '+' + money(householdImpact.value) })
     if (authorisedImpact.value) r.push({ label: 'Authorised driver plan', value: '+' + money(authorisedImpact.value) })
+    if (excessImpact.value !== 0) {
+      const up = excessImpact.value > 0
+      r.push({
+        label: `Excess ($${excessValue.value.toLocaleString()})`,
+        value: (up ? '+' : '- ') + money(Math.abs(excessImpact.value)),
+        good: !up,
+      })
+    }
     if (mileageDiscount.value) r.push({ label: 'Low mileage', value: '- ' + money(mileageDiscount.value), good: true })
     r.push({ label: 'GST (9%)', value: money(3600) })
     if (billing.value === 'single') r.push({ label: 'Single payment 3% discount', value: 'Included', good: true })

@@ -4,9 +4,14 @@ import { useRouter } from 'vue-router'
 import { useQuote } from '../store/quote'
 import DaSheet from '../components/DaSheet.vue'
 import DaQuoteFooter from '../components/DaQuoteFooter.vue'
+import { useDaPricing } from '../composables/useDaPricing'
 
 const { quote, mutable } = useQuote()
 const router = useRouter()
+
+// Headline price + breakdown share one source with the sticky footer so the
+// excess / driver / promo choices move the card AND the footer together.
+const pricing = useDaPricing()
 
 // Billing term (KB f1898394: "Single" / "Instalment", Single pre-selected).
 const billing = ref(quote.quoteSelection.billingCycle === 'instalment' ? 'instalment' : 'single')
@@ -14,21 +19,6 @@ function setBilling(v) {
   billing.value = v
   mutable.quoteSelection.billingCycle = v
 }
-// KB #38971919: never "per year". Single = "Total"; Instalment = "per month".
-const periodLabel = computed(() => (billing.value === 'single' ? 'Total' : 'per month'))
-
-// Static prototype figures (no live pricing engine).
-const headlinePrice = '$416.00'
-const breakdown = computed(() => {
-  const rows = [
-    { label: 'Subtotal', value: '$240.00' },
-    { label: 'Medical expenses', value: '$80.00' },
-    { label: 'GST (9%)', value: '$36.00' },
-  ]
-  if (quote.driveLess === true) rows.push({ label: 'Low mileage', value: '- $20.00', good: true })
-  if (billing.value === 'single') rows.push({ label: 'Single payment 3% discount', value: 'Included', good: true })
-  return rows
-})
 
 // Cover + car summary.
 const coverLabel = computed(() => ({
@@ -125,11 +115,11 @@ const visibleCovers = computed(() => (showAllCovers.value ? coverage : coverage.
           <button type="button" class="billing-btn" :class="{ 'is-on': billing === 'instalment' }" @click="setBilling('instalment')">Instalment</button>
         </div>
         <div class="price">
-          <span class="price-amt">{{ headlinePrice }}</span>
-          <span class="price-period">{{ periodLabel }}</span>
+          <span class="price-amt">{{ pricing.displayAmount.value }}</span>
+          <span class="price-period">{{ pricing.periodLabel.value }}</span>
         </div>
         <div class="breakdown">
-          <div v-for="row in breakdown" :key="row.label" class="bd-row" :class="{ 'is-good': row.good }">
+          <div v-for="row in pricing.rows.value" :key="row.label" class="bd-row" :class="{ 'is-good': row.good }">
             <span>{{ row.label }}</span>
             <span class="bd-val">{{ row.value }}</span>
           </div>
