@@ -2,6 +2,7 @@
 import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useQuote } from '../store/quote'
+import DaSheet from '../components/DaSheet.vue'
 
 const { quote, mutable } = useQuote()
 const router = useRouter()
@@ -53,24 +54,62 @@ const excess = computed({
   set: (v) => { mutable.quoteSelection.excess = v },
 })
 
-// Promotions applied (prototype seed).
-const promos = ref([])
-function addDemoPromo() {
-  if (!promos.value.length) {
-    promos.value = [
-      { code: 'Shell Go+ ID: 12345678912345678', desc: 'Enjoy your $100 Shell Fuel + FREE 24 Hour Breakdown Assistance' },
-    ]
-  }
-}
-function removePromo(i) { promos.value.splice(i, 1) }
+// --- Promotions — Promo Code and Shell Go+ ID are two SEPARATE, stackable flows ---
+const appliedPromos = ref([])
+const openSheet = ref(null) // 'promo' | 'shell' | null
+const promoInput = ref('')
+const shellInput = ref('')
 
+function applyPromoCode() {
+  const code = promoInput.value.trim().toUpperCase()
+  if (!code) return
+  appliedPromos.value.push({
+    name: code,
+    desc: 'Enjoy your 1 month free car insurance + $50 eCapitavoucher',
+  })
+  promoInput.value = ''
+  openSheet.value = null
+}
+function applyShell() {
+  const id = shellInput.value.replace(/\D/g, '')
+  if (!id) return
+  appliedPromos.value.push({
+    name: `Shell Go+ ID: ${id}`,
+    desc: 'Enjoy your $100 Shell Fuel + FREE 24 Hour Breakdown Assistance',
+  })
+  shellInput.value = ''
+  openSheet.value = null
+}
+function removePromo(i) { appliedPromos.value.splice(i, 1) }
+
+// --- Save & email quote ---
+const saveOpen = ref(false)
+const saveSent = ref(false)
+const saveEmail = ref('')
+function openSave() {
+  saveSent.value = false
+  saveEmail.value = quote.contact?.email || ''
+  saveOpen.value = true
+}
+function sendQuote() { if (saveEmail.value.trim()) saveSent.value = true }
+function closeSave() { saveOpen.value = false }
+
+// --- Coverage table (collapsed shows the first 5; "See more" reveals the rest) ---
 const coverage = [
   { name: 'Injury or death to someone else', value: 'Unlimited cover' },
   { name: "Damage to other people's property", value: 'up to $5,000,000' },
   { name: 'Legal costs against criminal charges', value: 'up to $3,000' },
   { name: 'Towing after an accident', value: '$500 for overseas tow and $200 for local tow' },
   { name: 'Damage by fire', value: 'check' },
+  { name: 'Damage or loss to your car due to theft', value: 'check' },
+  { name: 'Damage to your car if someone else crashes into you', value: 'check' },
+  { name: "Damage to your car when it's your fault", value: 'check' },
+  { name: 'Damage by fallen trees, flood, storms or natural disaster', value: 'check' },
+  { name: 'Damage by vandals', value: 'check' },
+  { name: 'Damage to windscreen or windows', value: 'check' },
 ]
+const showAllCovers = ref(false)
+const visibleCovers = computed(() => (showAllCovers.value ? coverage : coverage.slice(0, 5)))
 
 function onBack() { router.push('/step/8') }
 function onNext() { router.push('/step/10') }
@@ -104,7 +143,7 @@ function onNext() { router.push('/step/10') }
           <span>{{ coverLabel }}</span>
           <span>{{ carLabel }}</span>
         </div>
-        <button type="button" class="q-email">Save and email quote</button>
+        <button type="button" class="q-email" @click="openSave">Save and email quote</button>
       </div>
 
       <!-- Excess -->
@@ -138,24 +177,24 @@ function onNext() { router.push('/step/10') }
         <p class="q-title">Promotions</p>
         <p class="q-sub">
           Would you like to apply a promotion with promo code or
-          <a href="#" @click.prevent="addDemoPromo">Shell Go+ ID</a>?
+          <a href="#" @click.prevent="openSheet = 'shell'">Shell Go+ ID</a>?
         </p>
         <div class="promo-cards">
-          <button type="button" class="promo-card" @click="addDemoPromo">
+          <button type="button" class="promo-card" :class="{ 'is-on': openSheet === 'promo' }" @click="openSheet = 'promo'">
             <span class="promo-name">Promo Code</span>
             <span class="promo-desc">Enter a code from a campaign</span>
           </button>
-          <button type="button" class="promo-card" @click="addDemoPromo">
+          <button type="button" class="promo-card" :class="{ 'is-on': openSheet === 'shell' }" @click="openSheet = 'shell'">
             <span class="promo-name">Shell Go+ ID</span>
             <span class="promo-desc">Link your Shell GO+ membership</span>
           </button>
         </div>
-        <div v-for="(p, i) in promos" :key="p.code" class="promo-applied">
+        <div v-for="(p, i) in appliedPromos" :key="i" class="promo-applied">
           <span class="promo-check" aria-hidden="true">
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="7" fill="#75BB49"/><path d="M5 8.3l2 2 4-4.6" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </span>
           <span class="promo-applied-text">
-            <span class="promo-name">{{ p.code }}</span>
+            <span class="promo-name">{{ p.name }}</span>
             <span class="promo-desc">{{ p.desc }}</span>
           </span>
           <button type="button" class="promo-remove" aria-label="Remove promo" @click="removePromo(i)">
@@ -170,7 +209,7 @@ function onNext() { router.push('/step/10') }
         <p class="q-sub">Included in your comprehensive plan</p>
         <div class="cov-table">
           <div class="cov-head">Core Cover(s)</div>
-          <div v-for="row in coverage" :key="row.name" class="cov-row">
+          <div v-for="row in visibleCovers" :key="row.name" class="cov-row">
             <div class="cov-name">
               <span>{{ row.name }}</span>
               <svg class="cov-chev" width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M4.94 5.73L8 8.78l3.06-3.05L12 6.67 8 10.67 4 6.67l.94-.94Z" fill="#000"/></svg>
@@ -180,7 +219,9 @@ function onNext() { router.push('/step/10') }
               <span v-else>{{ row.value }}</span>
             </div>
           </div>
-          <button type="button" class="cov-more">See more covers</button>
+          <button type="button" class="cov-more" @click="showAllCovers = !showAllCovers">
+            {{ showAllCovers ? 'See less covers' : 'See more covers' }}
+          </button>
         </div>
         <p class="q-policy">For more details, refer to our <a href="#" @click.prevent>policy wording</a>.</p>
       </div>
@@ -200,6 +241,37 @@ function onNext() { router.push('/step/10') }
         <i class="pi pi-chevron-right" aria-hidden="true"></i>
       </button>
     </div>
+
+    <!-- Promo code sheet -->
+    <DaSheet :open="openSheet === 'promo'" title="Promo Code" @close="openSheet = null">
+      <div class="sheet-field">
+        <input v-model="promoInput" class="sheet-input" type="text" placeholder="Enter Promo Code" @keyup.enter="applyPromoCode" />
+        <button type="button" class="sheet-apply" @click="applyPromoCode">Apply</button>
+      </div>
+    </DaSheet>
+
+    <!-- Shell Go+ ID sheet -->
+    <DaSheet :open="openSheet === 'shell'" title="Shell Go+ ID" @close="openSheet = null">
+      <p class="sheet-help">Link your Shell GO+ membership to enjoy your reward.</p>
+      <div class="sheet-field">
+        <input v-model="shellInput" class="sheet-input" type="text" inputmode="numeric" placeholder="Enter Shell Go+ ID" @keyup.enter="applyShell" />
+        <button type="button" class="sheet-apply" @click="applyShell">Apply</button>
+      </div>
+    </DaSheet>
+
+    <!-- Save & email quote sheet -->
+    <DaSheet :open="saveOpen" :title="saveSent ? 'Email successfully sent' : 'Save and email my quote'" @close="closeSave">
+      <template v-if="!saveSent">
+        <p class="sheet-help">Enter your email address below and we'll send you a link so you can finish your quote whenever you like. We'll save all the information you've entered so your price won't change.</p>
+        <label class="sheet-label">Email</label>
+        <input v-model="saveEmail" class="sheet-input full" type="email" inputmode="email" placeholder="you@email.com" />
+        <button type="button" class="sheet-send" @click="sendQuote">Send my quote</button>
+      </template>
+      <template v-else>
+        <p class="sheet-help">This quote has been emailed to <strong>{{ saveEmail }}</strong>. You can always follow the link in the email to resume this quote.</p>
+        <button type="button" class="sheet-send" @click="closeSave">Close</button>
+      </template>
+    </DaSheet>
   </section>
 </template>
 
@@ -455,4 +527,75 @@ function onNext() { router.push('/step/10') }
   cursor: pointer;
 }
 .qf-next:hover { background: var(--da-green-hover, #69A841); }
+
+/* Bottom-sheet contents (promo code / Shell Go+ / save & email). */
+.sheet-help {
+  margin: 0 0 16px;
+  font-family: var(--da-font);
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 23px;
+  color: var(--da-ink);
+}
+.sheet-label {
+  display: block;
+  margin-bottom: 8px;
+  font-family: var(--da-font);
+  font-size: 16px;
+  font-weight: 600;
+  color: #252525;
+}
+.sheet-field {
+  display: flex;
+  align-items: stretch;
+  height: 56px;
+  border: 1px solid #CCCCCC;
+  border-radius: 8px;
+  overflow: hidden;
+}
+.sheet-input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  padding: 0 16px;
+  background: #fff;
+  font-family: var(--da-font);
+  font-size: 16px;
+  color: #1D1B20;
+}
+.sheet-input::placeholder { color: #9a9a9a; }
+.sheet-input.full {
+  width: 100%;
+  height: 56px;
+  border: 1px solid #CCCCCC;
+  border-radius: 8px;
+  margin-bottom: 16px;
+}
+.sheet-apply {
+  flex: 0 0 auto;
+  padding: 0 24px;
+  border: 0;
+  background: var(--da-green);
+  color: #fff;
+  font-family: var(--da-font);
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+}
+.sheet-send {
+  width: 100%;
+  height: 52px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--da-green);
+  color: #fff;
+  font-family: var(--da-font);
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* Selected promo card (while its sheet is open). */
+.promo-card.is-on { border-color: var(--da-blue); box-shadow: 0 0 0 1px var(--da-blue) inset; }
 </style>
