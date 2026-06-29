@@ -24,11 +24,7 @@ watch(
          step sticks to the bottom of this region while the content scrolls. -->
     <div class="da-scroll" ref="scrollEl">
       <main class="da-page">
-        <router-view v-slot="{ Component }">
-          <transition name="fade" mode="out-in">
-            <component :is="Component" />
-          </transition>
-        </router-view>
+        <router-view />
       </main>
       <AppFooter />
     </div>
@@ -52,14 +48,5 @@ watch(
   padding: 0 16px;
   display: flex;
   flex-direction: column;
-}
-
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 160ms ease;
-}
-.fade-enter-from,
-.fade-leave-to {
-  opacity: 0;
 }
 </style>
