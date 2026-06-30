@@ -67,6 +67,7 @@ const appliedPromos = computed(() => quote.appliedPromos)
 const hasShell = computed(() => quote.appliedPromos.some((p) => p.type === 'shell'))
 
 function selectType(t) {
+  if (t === 'shell' && hasShell.value) return // Shell Go+ ID is single-use
   promoType.value = t
   promoError.value = ''
   shellError.value = ''
@@ -92,6 +93,7 @@ function applyShell() {
   })
   shellInput.value = ''
   shellError.value = ''
+  promoType.value = 'promo' // Shell now linked — fall back to the promo field for stacking
 }
 function removePromo(i) { mutable.appliedPromos.splice(i, 1) }
 
@@ -195,9 +197,9 @@ const visibleCovers = computed(() => (showAllCovers.value ? coverage : coverage.
             <span class="pc-name">Promo Code</span>
             <span class="pc-desc">Enter a code from a campaign</span>
           </button>
-          <button type="button" class="promo-card" :class="{ 'is-on': promoType === 'shell' }" @click="selectType('shell')">
+          <button type="button" class="promo-card" :class="{ 'is-on': promoType === 'shell', 'is-disabled': hasShell }" :disabled="hasShell" @click="selectType('shell')">
             <span class="pc-name">Shell Go+ ID</span>
-            <span class="pc-desc">Link your Shell GO+ membership</span>
+            <span class="pc-desc">{{ hasShell ? 'Already applied' : 'Link your Shell GO+ membership' }}</span>
           </button>
         </div>
 
@@ -415,6 +417,14 @@ const visibleCovers = computed(() => (showAllCovers.value ? coverage : coverage.
   cursor: pointer;
 }
 .promo-card.is-on { background: var(--da-blue); border-color: var(--da-outline); }
+.promo-card.is-disabled {
+  background: #F5F5F5;
+  border-color: #E4E4E4;
+  box-shadow: none;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+.promo-card.is-disabled .pc-name, .promo-card.is-disabled .pc-desc { color: #979797; }
 .pc-name { font-size: 14px; font-weight: 700; color: #000; }
 .pc-desc { font-size: 12px; font-weight: 500; color: #000; }
 .promo-card.is-on .pc-name, .promo-card.is-on .pc-desc { color: #fff; }
