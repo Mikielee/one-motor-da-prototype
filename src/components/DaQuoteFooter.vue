@@ -40,6 +40,10 @@ function onBack() {
 </script>
 
 <template>
+  <!-- Flex spacer: keeps a minimum gap between page content and the sticky bar
+       (grows to push the bar to the viewport bottom on short pages). -->
+  <div class="da-qf-spacer" aria-hidden="true"></div>
+
   <div class="da-qf" :class="{ 'is-expanded': expanded }">
     <button
       type="button"
@@ -88,11 +92,12 @@ function onBack() {
 <style scoped>
 /* margin-top: auto pins the bar to the bottom of the .step flex column on short
    pages; it scrolls with content on long ones. */
+.da-qf-spacer { flex: 1 0 24px; }
 .da-qf {
   position: sticky;
   bottom: 0;
   z-index: 20;
-  margin: auto -16px 0 -16px;
+  margin: 0 -16px 0 -16px;
   padding: 24px 16px 12px;
   background: var(--da-yellow);
   border-top-left-radius: var(--da-radius-lg);

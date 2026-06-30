@@ -52,6 +52,7 @@ const excess = computed({
 // only a single Shell Go+ ID can be linked.
 // Valid demo promo codes: DRIVE150, EV100. Valid Shell Go+ ID: 16-19 digits.
 const PROMO_CATALOG = {
+  TEST: 'Enjoy your $50 eCapitavoucher',
   DRIVE150: 'Enjoy your 1 month free car insurance + $50 eCapitavoucher',
   EV100: 'Enjoy your $100 eCapitavoucher',
 }
@@ -83,12 +84,15 @@ function applyPromoCode() {
   promoError.value = ''
 }
 function applyShell() {
-  const id = shellInput.value.replace(/\D/g, '')
-  if (!id) return
-  if (id.length < 16 || id.length > 19 || hasShell.value) { shellError.value = PROMO_ERR; return }
+  const raw = shellInput.value.trim()
+  if (!raw) return
+  const isTest = raw.toLowerCase() === 'test'
+  const id = raw.replace(/\D/g, '')
+  const valid = isTest || (id.length >= 16 && id.length <= 19)
+  if (!valid || hasShell.value) { shellError.value = PROMO_ERR; return }
   mutable.appliedPromos.push({
     type: 'shell',
-    name: `Shell Go+ ID: ${id}`,
+    name: `Shell Go+ ID: ${isTest ? 'TEST' : id}`,
     desc: 'Enjoy your $100 Shell Fuel + FREE 24 Hour Breakdown Assistance',
   })
   shellInput.value = ''
