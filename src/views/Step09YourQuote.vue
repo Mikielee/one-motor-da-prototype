@@ -2,7 +2,6 @@
 import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useQuote } from '../store/quote'
-import DaSheet from '../components/DaSheet.vue'
 import DaQuoteFooter from '../components/DaQuoteFooter.vue'
 import { useDaPricing } from '../composables/useDaPricing'
 
@@ -101,17 +100,19 @@ function applyShell() {
 }
 function removePromo(i) { mutable.appliedPromos.splice(i, 1) }
 
-// --- Save & email quote ---
-const saveOpen = ref(false)
-const saveSent = ref(false)
-const saveEmail = ref('')
-function openSave() {
-  saveSent.value = false
-  saveEmail.value = quote.contact?.email || ''
-  saveOpen.value = true
+// --- Save & email quote (inline) — Figma OMP-29 ---
+// "Save and email quote" -> inline editable email (prefilled from the contact
+// step) + "Email quote" -> a confirmation toast replaces the field.
+const emailState = ref('idle') // 'idle' | 'editing' | 'sent'
+const emailValue = ref('')
+function openEmailEdit() {
+  emailValue.value = quote.contact?.email || ''
+  emailState.value = 'editing'
 }
-function sendQuote() { if (saveEmail.value.trim()) saveSent.value = true }
-function closeSave() { saveOpen.value = false }
+function sendEmail() {
+  if (!emailValue.value.trim()) return
+  emailState.value = 'sent'
+}
 
 // --- Coverage table (collapsed shows the first 5; "See more" reveals the rest) ---
 const coverage = [
@@ -160,7 +161,17 @@ const visibleCovers = computed(() => (showAllCovers.value ? coverage : coverage.
           <span>{{ coverLabel }}</span>
           <span>{{ carLabel }}</span>
         </div>
-        <button type="button" class="q-email" @click="openSave">Save and email quote</button>
+        <button v-if="emailState === 'idle'" type="button" class="q-email" @click="openEmailEdit">Save and email quote</button>
+        <div v-else-if="emailState === 'editing'" class="email-row">
+          <input v-model="emailValue" class="email-input" type="email" inputmode="email" aria-label="Email address" @keyup.enter="sendEmail" />
+          <button type="button" class="email-send" @click="sendEmail">Email quote</button>
+        </div>
+        <div v-else class="email-toast">
+          <span class="email-check" aria-hidden="true">
+            <svg width="20" height="20" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="7" fill="#75BB49"/><path d="M5 8.3l2 2 4-4.6" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </span>
+          <span class="email-toast-text">Your quote has been sent to <strong>{{ emailValue }}</strong></span>
+        </div>
       </div>
 
       <!-- Excess -->
@@ -268,20 +279,6 @@ const visibleCovers = computed(() => (showAllCovers.value ? coverage : coverage.
 
     <!-- Sticky running-price footer (expandable breakdown) -->
     <DaQuoteFooter />
-
-    <!-- Save & email quote sheet -->
-    <DaSheet :open="saveOpen" :title="saveSent ? 'Email successfully sent' : 'Save and email my quote'" @close="closeSave">
-      <template v-if="!saveSent">
-        <p class="sheet-help">Enter your email address below and we'll send you a link so you can finish your quote whenever you like. We'll save all the information you've entered so your price won't change.</p>
-        <label class="sheet-label">Email</label>
-        <input v-model="saveEmail" class="sheet-input full" type="email" inputmode="email" placeholder="you@email.com" />
-        <button type="button" class="sheet-send" @click="sendQuote">Send my quote</button>
-      </template>
-      <template v-else>
-        <p class="sheet-help">This quote has been emailed to <strong>{{ saveEmail }}</strong>. You can always follow the link in the email to resume this quote.</p>
-        <button type="button" class="sheet-send" @click="closeSave">Close</button>
-      </template>
-    </DaSheet>
   </section>
 </template>
 
@@ -368,6 +365,54 @@ const visibleCovers = computed(() => (showAllCovers.value ? coverage : coverage.
   color: #000;
   cursor: pointer;
 }
+
+/* Inline "email quote" edit row + confirmation toast. */
+.email-row { display: flex; align-items: stretch; height: 48px; }
+.email-input {
+  flex: 1;
+  min-width: 0;
+  border: 1px solid var(--da-blue);
+  border-right: 0;
+  border-radius: 8px 0 0 8px;
+  padding: 0 16px;
+  background: #fff;
+  font-family: var(--da-font);
+  font-size: 16px;
+  font-weight: 400;
+  color: #333F48;
+}
+.email-input:focus { outline: 0; }
+.email-send {
+  flex: 0 0 auto;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 0 8px 8px 0;
+  background: var(--da-green);
+  color: #fff;
+  font-family: var(--da-font);
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+}
+.email-toast {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 12px 8px;
+  background: #fff;
+  border-radius: 8px;
+  outline: 1px solid rgba(0, 0, 0, 0.10);
+  outline-offset: -1px;
+}
+.email-check { flex: 0 0 auto; line-height: 0; }
+.email-toast-text {
+  font-family: var(--da-font);
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 19.5px;
+  color: #333F48;
+}
+.email-toast-text strong { font-weight: 700; }
 
 /* Sections. */
 .q-section { display: flex; flex-direction: column; gap: 8px; }
