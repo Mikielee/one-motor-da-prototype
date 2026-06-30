@@ -45,32 +45,53 @@ const excess = computed({
   set: (v) => { mutable.quoteSelection.excess = v },
 })
 
-// --- Promotions — Promo Code and Shell Go+ ID are two SEPARATE, stackable flows.
-// Stored on the quote so the price footer can surface them on later pages too. ---
-const appliedPromos = computed(() => quote.appliedPromos)
-const openSheet = ref(null) // 'promo' | 'shell' | null
+// --- Promotions (inline) — Figma OMP-28 ---
+// A selector card chooses Promo Code or Shell Go+ ID; the matching field shows
+// below. On Apply, valid entries become a stacked chip; invalid ones show a red
+// inline error. Promo codes stack with each other AND with one Shell Go+ ID;
+// only a single Shell Go+ ID can be linked.
+// Valid demo promo codes: DRIVE150, EV100. Valid Shell Go+ ID: 16-19 digits.
+const PROMO_CATALOG = {
+  DRIVE150: 'Enjoy your 1 month free car insurance + $50 eCapitavoucher',
+  EV100: 'Enjoy your $100 eCapitavoucher',
+}
+const PROMO_ERR = 'This promo code is invalid or cannot be combined with other promo codes!'
+
+const promoType = ref('promo') // 'promo' | 'shell' — selected card
 const promoInput = ref('')
 const shellInput = ref('')
+const promoError = ref('')
+const shellError = ref('')
 
+const appliedPromos = computed(() => quote.appliedPromos)
+const hasShell = computed(() => quote.appliedPromos.some((p) => p.type === 'shell'))
+
+function selectType(t) {
+  promoType.value = t
+  promoError.value = ''
+  shellError.value = ''
+}
 function applyPromoCode() {
   const code = promoInput.value.trim().toUpperCase()
   if (!code) return
-  mutable.appliedPromos.push({
-    name: code,
-    desc: 'Enjoy your 1 month free car insurance + $50 eCapitavoucher',
-  })
+  const dup = quote.appliedPromos.some((p) => p.type === 'code' && p.name === code)
+  const desc = PROMO_CATALOG[code]
+  if (!desc || dup) { promoError.value = PROMO_ERR; return }
+  mutable.appliedPromos.push({ type: 'code', name: code, desc })
   promoInput.value = ''
-  openSheet.value = null
+  promoError.value = ''
 }
 function applyShell() {
   const id = shellInput.value.replace(/\D/g, '')
   if (!id) return
+  if (id.length < 16 || id.length > 19 || hasShell.value) { shellError.value = PROMO_ERR; return }
   mutable.appliedPromos.push({
+    type: 'shell',
     name: `Shell Go+ ID: ${id}`,
     desc: 'Enjoy your $100 Shell Fuel + FREE 24 Hour Breakdown Assistance',
   })
   shellInput.value = ''
-  openSheet.value = null
+  shellError.value = ''
 }
 function removePromo(i) { mutable.appliedPromos.splice(i, 1) }
 
@@ -162,32 +183,54 @@ const visibleCovers = computed(() => (showAllCovers.value ? coverage : coverage.
         </div>
       </div>
 
-      <!-- Promotions -->
+      <!-- Promotions (inline selector + field) -->
       <div class="q-section">
         <p class="q-title">Promotions</p>
         <p class="q-sub">
           Would you like to apply a promotion with promo code or
-          <a href="#" @click.prevent="openSheet = 'shell'">Shell Go+ ID</a>?
+          <a href="#" @click.prevent="selectType('shell')">Shell Go+ ID</a>?
         </p>
         <div class="promo-cards">
-          <button type="button" class="promo-card" :class="{ 'is-on': openSheet === 'promo' }" @click="openSheet = 'promo'">
-            <span class="promo-name">Promo Code</span>
-            <span class="promo-desc">Enter a code from a campaign</span>
+          <button type="button" class="promo-card" :class="{ 'is-on': promoType === 'promo' }" @click="selectType('promo')">
+            <span class="pc-name">Promo Code</span>
+            <span class="pc-desc">Enter a code from a campaign</span>
           </button>
-          <button type="button" class="promo-card" :class="{ 'is-on': openSheet === 'shell' }" @click="openSheet = 'shell'">
-            <span class="promo-name">Shell Go+ ID</span>
-            <span class="promo-desc">Link your Shell GO+ membership</span>
+          <button type="button" class="promo-card" :class="{ 'is-on': promoType === 'shell' }" @click="selectType('shell')">
+            <span class="pc-name">Shell Go+ ID</span>
+            <span class="pc-desc">Link your Shell GO+ membership</span>
           </button>
         </div>
+
+        <!-- Promo code field -->
+        <template v-if="promoType === 'promo'">
+          <div class="promo-apply" :class="{ 'has-val': promoInput, 'is-error': promoError }">
+            <input v-model="promoInput" class="promo-input" type="text" placeholder="Enter Promo Code"
+              @input="promoError = ''" @keyup.enter="applyPromoCode" />
+            <button type="button" class="promo-apply-btn" @click="applyPromoCode">Apply</button>
+          </div>
+          <p v-if="promoError" class="promo-err">{{ promoError }}</p>
+        </template>
+
+        <!-- Shell Go+ ID field (hidden once one is linked — only one allowed) -->
+        <template v-else-if="!hasShell">
+          <div class="promo-apply" :class="{ 'has-val': shellInput, 'is-error': shellError }">
+            <input v-model="shellInput" class="promo-input" type="text" inputmode="numeric" placeholder="Enter your Shell GO+ ID"
+              @input="shellError = ''" @keyup.enter="applyShell" />
+            <button type="button" class="promo-apply-btn" @click="applyShell">Apply</button>
+          </div>
+          <p v-if="shellError" class="promo-err">{{ shellError }}</p>
+        </template>
+
+        <!-- Applied promos (stacked, each removable) -->
         <div v-for="(p, i) in appliedPromos" :key="i" class="promo-applied">
-          <span class="promo-check" aria-hidden="true">
+          <span class="pa-check" aria-hidden="true">
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="7" fill="#75BB49"/><path d="M5 8.3l2 2 4-4.6" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </span>
-          <span class="promo-applied-text">
-            <span class="promo-name">{{ p.name }}</span>
-            <span class="promo-desc">{{ p.desc }}</span>
+          <span class="pa-text">
+            <span class="pa-name">{{ p.name }}</span>
+            <span class="pa-desc">{{ p.desc }}</span>
           </span>
-          <button type="button" class="promo-remove" aria-label="Remove promo" @click="removePromo(i)">
+          <button type="button" class="pa-remove" aria-label="Remove promo" @click="removePromo(i)">
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 4h12M5.3 4V2.7h5.4V4M3.3 4v9.3a1.3 1.3 0 001.4 1.4h6.6a1.3 1.3 0 001.4-1.4V4" stroke="#1E1E1E" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </button>
         </div>
@@ -219,23 +262,6 @@ const visibleCovers = computed(() => (showAllCovers.value ? coverage : coverage.
 
     <!-- Sticky running-price footer (expandable breakdown) -->
     <DaQuoteFooter />
-
-    <!-- Promo code sheet -->
-    <DaSheet :open="openSheet === 'promo'" title="Promo Code" @close="openSheet = null">
-      <div class="sheet-field">
-        <input v-model="promoInput" class="sheet-input" type="text" placeholder="Enter Promo Code" @keyup.enter="applyPromoCode" />
-        <button type="button" class="sheet-apply" @click="applyPromoCode">Apply</button>
-      </div>
-    </DaSheet>
-
-    <!-- Shell Go+ ID sheet -->
-    <DaSheet :open="openSheet === 'shell'" title="Shell Go+ ID" @close="openSheet = null">
-      <p class="sheet-help">Link your Shell GO+ membership to enjoy your reward.</p>
-      <div class="sheet-field">
-        <input v-model="shellInput" class="sheet-input" type="text" inputmode="numeric" placeholder="Enter Shell Go+ ID" @keyup.enter="applyShell" />
-        <button type="button" class="sheet-apply" @click="applyShell">Apply</button>
-      </div>
-    </DaSheet>
 
     <!-- Save & email quote sheet -->
     <DaSheet :open="saveOpen" :title="saveSent ? 'Email successfully sent' : 'Save and email my quote'" @close="closeSave">
@@ -371,23 +397,74 @@ const visibleCovers = computed(() => (showAllCovers.value ? coverage : coverage.
 .ex-delta.tone-default { color: #000; }
 .excess-tile.is-on .ex-val, .excess-tile.is-on .ex-delta { color: #fff; }
 
-/* Promotions. */
-.promo-cards { display: flex; gap: 16px; margin-top: 8px; }
+/* Promotions — selector cards. */
+.promo-cards { display: flex; gap: 16px; }
 .promo-card {
   flex: 1;
   display: flex;
   flex-direction: column;
+  justify-content: center;
   gap: 4px;
+  min-height: 81px;
   padding: 16px;
   background: #fff;
-  border: 1px solid var(--da-line-soft);
+  border: 1px solid #E4E4E4;
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1), 0 1px 1px rgba(0, 0, 0, 0.05);
   text-align: left;
   cursor: pointer;
 }
-.promo-name { font-size: 14px; font-weight: 700; color: var(--da-ink); }
-.promo-desc { font-size: 12px; font-weight: 500; color: var(--da-ink); }
+.promo-card.is-on { background: var(--da-blue); border-color: var(--da-outline); }
+.pc-name { font-size: 14px; font-weight: 700; color: #000; }
+.pc-desc { font-size: 12px; font-weight: 500; color: #000; }
+.promo-card.is-on .pc-name, .promo-card.is-on .pc-desc { color: #fff; }
+
+/* Inline Apply field. */
+.promo-apply {
+  display: flex;
+  align-items: stretch;
+  height: 48px;
+  border-radius: 8px;
+}
+.promo-input {
+  flex: 1;
+  min-width: 0;
+  border: 1px solid #DADADA;
+  border-right: 0;
+  border-radius: 8px 0 0 8px;
+  padding: 0 16px;
+  background: #fff;
+  font-family: var(--da-font);
+  font-size: 16px;
+  font-weight: 400;
+  color: #333F48;
+}
+.promo-input::placeholder { color: #CCCCCC; }
+.promo-input:focus { outline: 0; }
+.promo-apply.has-val .promo-input { border-color: var(--da-blue); }
+.promo-apply.is-error .promo-input { border-color: var(--da-error); }
+.promo-apply-btn {
+  flex: 0 0 auto;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 0 8px 8px 0;
+  background: var(--da-green);
+  color: #fff;
+  font-family: var(--da-font);
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+}
+.promo-err {
+  margin: 0;
+  font-family: var(--da-font);
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 20px;
+  color: var(--da-error);
+}
+
+/* Applied promo chip (stacked). */
 .promo-applied {
   display: flex;
   align-items: flex-start;
@@ -396,11 +473,12 @@ const visibleCovers = computed(() => (showAllCovers.value ? coverage : coverage.
   background: #fff;
   border: 1px solid rgba(0, 0, 0, 0.1);
   border-radius: 8px;
-  margin-top: 8px;
 }
-.promo-check { flex: 0 0 16px; margin-top: 2px; }
-.promo-applied-text { flex: 1; display: flex; flex-direction: column; gap: 4px; }
-.promo-remove { background: 0; border: 0; cursor: pointer; padding: 2px; }
+.pa-check { flex: 0 0 16px; margin-top: 2px; line-height: 0; }
+.pa-text { flex: 1; display: flex; flex-direction: column; gap: 4px; }
+.pa-name { font-size: 14px; font-weight: 700; color: #333F48; }
+.pa-desc { font-size: 12px; font-weight: 500; color: #333F48; }
+.pa-remove { background: 0; border: 0; cursor: pointer; padding: 2px; flex: 0 0 auto; }
 
 /* Coverage table. */
 .cov-table { display: flex; flex-direction: column; }
